@@ -1,0 +1,43 @@
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+export type Story = Tables<"stories">;
+
+export const fetchStories = async (): Promise<Story[]> => {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+};
+
+export const fetchStory = async (id: string): Promise<Story | null> => {
+  const { data, error } = await supabase.from("stories").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data;
+};
+
+export const fetchSavedStories = async (): Promise<Story[]> => {
+  const { data, error } = await supabase
+    .from("user_library")
+    .select("story_id, stories(*)")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map((r: any) => r.stories).filter(Boolean);
+};
+
+export const isSaved = async (storyId: string): Promise<boolean> => {
+  const { data } = await supabase.from("user_library").select("id").eq("story_id", storyId).maybeSingle();
+  return !!data;
+};
+
+export const toggleSaved = async (storyId: string): Promise<boolean> => {
+  const saved = await isSaved(storyId);
+  if (saved) {
+    await supabase.from("user_library").delete().eq("story_id", storyId);
+    return false;
+  }
+  await supabase.from("user_library").insert({ story_id: storyId });
+  return true;
+};
