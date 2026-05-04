@@ -14,7 +14,127 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      child_profiles: {
+        Row: {
+          age: number
+          created_at: string
+          family_type: string | null
+          gender: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          age: number
+          created_at?: string
+          family_type?: string | null
+          gender?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          age?: number
+          created_at?: string
+          family_type?: string | null
+          gender?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      stories: {
+        Row: {
+          age_group: string | null
+          audio_url: string | null
+          created_at: string
+          description: string | null
+          duration: number | null
+          id: string
+          is_featured: boolean
+          theme: string | null
+          thumbnail: string | null
+          title: string
+          type: string
+        }
+        Insert: {
+          age_group?: string | null
+          audio_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_featured?: boolean
+          theme?: string | null
+          thumbnail?: string | null
+          title: string
+          type?: string
+        }
+        Update: {
+          age_group?: string | null
+          audio_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          id?: string
+          is_featured?: boolean
+          theme?: string | null
+          thumbnail?: string | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
+      story_tags: {
+        Row: {
+          id: string
+          story_id: string
+          tag: string
+        }
+        Insert: {
+          id?: string
+          story_id: string
+          tag: string
+        }
+        Update: {
+          id?: string
+          story_id?: string
+          tag?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_tags_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_library: {
+        Row: {
+          created_at: string
+          id: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_library_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
