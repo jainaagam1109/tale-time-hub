@@ -47,6 +47,22 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          soft: "hsl(var(--surface-soft))",
+        },
+        "primary-deep": "hsl(var(--primary-deep))",
+        tag: {
+          "warm-bg": "hsl(var(--tag-warm-bg))",
+          "warm-fg": "hsl(var(--tag-warm-fg))",
+          "warm-border": "hsl(var(--tag-warm-border))",
+          "cool-bg": "hsl(var(--tag-cool-bg))",
+          "cool-fg": "hsl(var(--tag-cool-fg))",
+          "cool-border": "hsl(var(--tag-cool-border))",
+          "mint-bg": "hsl(var(--tag-mint-bg))",
+          "mint-fg": "hsl(var(--tag-mint-fg))",
+          "mint-border": "hsl(var(--tag-mint-border))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
