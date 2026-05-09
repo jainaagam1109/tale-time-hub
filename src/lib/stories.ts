@@ -2,6 +2,17 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Story = Tables<"stories">;
+export type Episode = Tables<"episodes">;
+
+export const fetchEpisodes = async (storyId: string): Promise<Episode[]> => {
+  const { data, error } = await supabase
+    .from("episodes")
+    .select("*")
+    .eq("story_id", storyId)
+    .order("episode_number", { ascending: true });
+  if (error) throw error;
+  return data ?? [];
+};
 
 export const fetchStories = async (): Promise<Story[]> => {
   const { data, error } = await supabase

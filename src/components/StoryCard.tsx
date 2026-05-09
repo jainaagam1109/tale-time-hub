@@ -2,12 +2,6 @@ import { Link } from "react-router-dom";
 import type { Story } from "@/lib/stories";
 import { TagChip } from "./TagChip";
 
-const formatDuration = (seconds?: number | null) => {
-  if (!seconds) return "—";
-  const m = Math.round(seconds / 60);
-  return `${m} min`;
-};
-
 export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?: "grid" | "row" }) => {
   if (variant === "row") {
     return (
@@ -22,7 +16,7 @@ export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?:
           {story.theme && <TagChip label={story.theme} />}
           <div className="mt-1 truncate text-sm font-bold text-foreground">{story.title}</div>
           <div className="text-xs text-muted-foreground">
-            {story.age_group ?? "All ages"} · {formatDuration(story.duration)}
+            {story.age_group ?? "All ages"}
           </div>
         </div>
       </Link>
@@ -41,7 +35,7 @@ export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?:
         {story.theme && <TagChip label={story.theme} />}
         <div className="line-clamp-2 text-xs font-bold leading-snug text-foreground">{story.title}</div>
         <div className="text-[10px] text-muted-foreground">
-          {story.age_group ?? "All"} · {formatDuration(story.duration)}
+          {story.age_group ?? "All"}
         </div>
       </div>
     </Link>

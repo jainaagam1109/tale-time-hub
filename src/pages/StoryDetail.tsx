@@ -50,8 +50,6 @@ const StoryDetail = () => {
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
           <span>{story.age_group ?? "All ages"}</span>
           <span>·</span>
-          <span>{story.duration ? `${Math.round(story.duration / 60)} min` : "—"}</span>
-          <span>·</span>
           <Mic className="h-3 w-3" />
           <span>Narrated by Luna</span>
         </div>

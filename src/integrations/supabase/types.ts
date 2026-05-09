@@ -41,13 +41,52 @@ export type Database = {
         }
         Relationships: []
       }
-      stories: {
+      episodes: {
         Row: {
-          age_group: string | null
           audio_url: string | null
           created_at: string
           description: string | null
           duration: number | null
+          episode_number: number
+          id: string
+          story_id: string
+          title: string
+        }
+        Insert: {
+          audio_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          episode_number: number
+          id?: string
+          story_id: string
+          title: string
+        }
+        Update: {
+          audio_url?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: number | null
+          episode_number?: number
+          id?: string
+          story_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "episodes_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stories: {
+        Row: {
+          age_group: string | null
+          created_at: string
+          description: string | null
           id: string
           is_featured: boolean
           theme: string | null
@@ -57,10 +96,8 @@ export type Database = {
         }
         Insert: {
           age_group?: string | null
-          audio_url?: string | null
           created_at?: string
           description?: string | null
-          duration?: number | null
           id?: string
           is_featured?: boolean
           theme?: string | null
@@ -70,10 +107,8 @@ export type Database = {
         }
         Update: {
           age_group?: string | null
-          audio_url?: string | null
           created_at?: string
           description?: string | null
-          duration?: number | null
           id?: string
           is_featured?: boolean
           theme?: string | null
