@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Play, Pause, SkipBack, SkipForward } from "lucide-react";
-import { fetchStory } from "@/lib/stories";
+import { fetchStory, fetchEpisodes } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 
 const fmt = (s: number) => {
@@ -17,6 +17,9 @@ const Player = () => {
   const nav = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
   const { data: story } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
+  const { data: episodes } = useQuery({ queryKey: ["episodes", id], queryFn: () => fetchEpisodes(id), enabled: !!id });
+  const firstEpisode = episodes?.[0];
+  const audioUrl = firstEpisode?.audio_url ?? null;
   const [playing, setPlaying] = useState(false);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(0);
