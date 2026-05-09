@@ -46,6 +46,7 @@ const Player = () => {
     } else {
       a.play();
       setPlaying(true);
+      if (story?.id) localStorage.setItem("lulutales_last_story", story.id);
     }
   };
 
