@@ -38,7 +38,7 @@ const Player = () => {
       a.removeEventListener("loadedmetadata", onMeta);
       a.removeEventListener("ended", onEnd);
     };
-  }, [story?.audio_url]);
+  }, [audioUrl]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -98,7 +98,7 @@ const Player = () => {
             onClick={toggle}
             className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow"
             aria-label={playing ? "Pause" : "Play"}
-            disabled={!story?.audio_url}
+            disabled={!audioUrl}
           >
             {playing ? <Pause className="h-7 w-7 fill-current" /> : <Play className="h-7 w-7 fill-current" />}
           </button>
@@ -107,14 +107,14 @@ const Player = () => {
           </button>
         </div>
 
-        {!story?.audio_url && (
+        {!audioUrl && (
           <p className="mt-6 text-center text-xs text-muted-foreground">
             No audio uploaded for this story yet.
           </p>
         )}
 
-        {story?.audio_url && (
-          <audio ref={audioRef} src={story.audio_url} preload="metadata" className="mt-6 w-full" controls />
+        {audioUrl && (
+          <audio ref={audioRef} src={audioUrl} preload="metadata" className="mt-6 w-full" controls />
         )}
       </div>
     </PhoneShell>
