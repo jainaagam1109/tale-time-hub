@@ -16,7 +16,7 @@ export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?:
           {story.theme && <TagChip label={story.theme} />}
           <div className="mt-1 truncate text-sm font-bold text-foreground">{story.title}</div>
           <div className="text-xs text-muted-foreground">
-            {story.age_group ?? "All ages"} · {formatDuration(story.duration)}
+            {story.age_group ?? "All ages"}
           </div>
         </div>
       </Link>
