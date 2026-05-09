@@ -18,6 +18,12 @@ export const fetchStory = async (id: string): Promise<Story | null> => {
   return data;
 };
 
+export const fetchStoryTags = async (storyId: string): Promise<string[]> => {
+  const { data, error } = await supabase.from("story_tags").select("tag").eq("story_id", storyId);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.tag);
+};
+
 export const fetchSavedStories = async (): Promise<Story[]> => {
   const { data, error } = await supabase
     .from("user_library")
