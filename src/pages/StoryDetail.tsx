@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Play, Bookmark, BookmarkCheck } from "lucide-react";
-import { fetchStory, isSaved, toggleSaved } from "@/lib/stories";
+import { ChevronLeft, Play, Bookmark, BookmarkCheck, Mic } from "lucide-react";
+import { fetchStory, fetchStoryTags, isSaved, toggleSaved } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
+import { TagChip } from "@/components/TagChip";
 import { toast } from "sonner";
 
 const StoryDetail = () => {
   const { id = "" } = useParams();
   const nav = useNavigate();
   const { data: story, isLoading } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
+  const { data: tags = [] } = useQuery({ queryKey: ["story-tags", id], queryFn: () => fetchStoryTags(id), enabled: !!id });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -25,11 +27,15 @@ const StoryDetail = () => {
   if (isLoading) return <PhoneShell><p className="p-6 text-sm text-muted-foreground">Loading…</p></PhoneShell>;
   if (!story) return <PhoneShell><p className="p-6 text-sm">Not found. <Link to="/" className="text-primary-deep">Go home</Link></p></PhoneShell>;
 
-  const episodes = [{ name: "Episode 1 · The beginning" }, { name: "Episode 2 · The journey" }, { name: "Episode 3 · The lesson" }];
+  const episodes = [
+    { name: "Episode 1 · The beginning", done: true },
+    { name: "Episode 2 · The journey", done: false },
+    { name: "Episode 3 · The lesson", done: false },
+  ];
 
   return (
     <PhoneShell>
-      <div className="px-5 pt-6 pb-3">
+      <div className="px-5 pt-4 pb-3">
         <button onClick={() => nav(-1)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
@@ -39,15 +45,24 @@ const StoryDetail = () => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-5 pb-6">
-        {story.theme && (
-          <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-primary-deep">
-            {story.theme}
+        {story.theme && <TagChip label={story.theme} />}
+        <h1 className="mt-2 text-2xl font-extrabold text-foreground">{story.title}</h1>
+        <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+          <span>{story.age_group ?? "All ages"}</span>
+          <span>·</span>
+          <span>{story.duration ? `${Math.round(story.duration / 60)} min` : "—"}</span>
+          <span>·</span>
+          <Mic className="h-3 w-3" />
+          <span>Narrated by Luna</span>
+        </div>
+
+        {tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <TagChip key={t} label={t} />
+            ))}
           </div>
         )}
-        <h1 className="text-2xl font-extrabold text-foreground">{story.title}</h1>
-        <div className="mt-1 text-xs text-muted-foreground">
-          {story.age_group ?? "All ages"} · {story.duration ? `${Math.round(story.duration / 60)} min` : "—"}
-        </div>
 
         {story.description && (
           <p className="mt-4 text-sm leading-relaxed text-foreground/80">{story.description}</p>
@@ -75,10 +90,19 @@ const StoryDetail = () => {
         <div className="rounded-2xl border border-border bg-card">
           {episodes.map((ep, i) => (
             <div key={i} className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">
+              <div
+                className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs ${
+                  ep.done
+                    ? "border-transparent bg-gradient-primary text-primary-foreground"
+                    : "border-border text-muted-foreground"
+                }`}
+              >
                 {i + 1}
               </div>
               <div className="flex-1 text-sm font-semibold text-foreground">{ep.name}</div>
+              {ep.done && (
+                <span className="text-[9px] font-bold uppercase tracking-wider text-primary-deep">Played</span>
+              )}
             </div>
           ))}
         </div>
