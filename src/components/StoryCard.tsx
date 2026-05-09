@@ -2,12 +2,6 @@ import { Link } from "react-router-dom";
 import type { Story } from "@/lib/stories";
 import { TagChip } from "./TagChip";
 
-const formatDuration = (seconds?: number | null) => {
-  if (!seconds) return "—";
-  const m = Math.round(seconds / 60);
-  return `${m} min`;
-};
-
 export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?: "grid" | "row" }) => {
   if (variant === "row") {
     return (
