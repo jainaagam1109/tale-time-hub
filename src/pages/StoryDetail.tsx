@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Play, Bookmark, BookmarkCheck, Mic } from "lucide-react";
-import { fetchStory, fetchStoryTags, isSaved, toggleSaved } from "@/lib/stories";
+import { fetchEpisodes, fetchStory, fetchStoryTags, isSaved, toggleSaved } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 import { TagChip } from "@/components/TagChip";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ const StoryDetail = () => {
   const nav = useNavigate();
   const { data: story, isLoading } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
   const { data: tags = [] } = useQuery({ queryKey: ["story-tags", id], queryFn: () => fetchStoryTags(id), enabled: !!id });
+  const { data: episodes = [] } = useQuery({ queryKey: ["episodes", id], queryFn: () => fetchEpisodes(id), enabled: !!id });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
@@ -26,12 +27,6 @@ const StoryDetail = () => {
 
   if (isLoading) return <PhoneShell><p className="p-6 text-sm text-muted-foreground">Loading…</p></PhoneShell>;
   if (!story) return <PhoneShell><p className="p-6 text-sm">Not found. <Link to="/" className="text-primary-deep">Go home</Link></p></PhoneShell>;
-
-  const episodes = [
-    { name: "Episode 1 · The beginning", done: true },
-    { name: "Episode 2 · The journey", done: false },
-    { name: "Episode 3 · The lesson", done: false },
-  ];
 
   return (
     <PhoneShell>
@@ -86,22 +81,21 @@ const StoryDetail = () => {
           Episodes
         </h2>
         <div className="rounded-2xl border border-border bg-card">
-          {episodes.map((ep, i) => (
-            <div key={i} className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0">
-              <div
-                className={`flex h-7 w-7 items-center justify-center rounded-full border text-xs ${
-                  ep.done
-                    ? "border-transparent bg-gradient-primary text-primary-foreground"
-                    : "border-border text-muted-foreground"
-                }`}
-              >
-                {i + 1}
+          {episodes.length === 0 && (
+            <div className="px-4 py-3 text-sm text-muted-foreground">No episodes yet.</div>
+          )}
+          {episodes.map((ep) => (
+            <button
+              key={ep.id}
+              onClick={() => nav(`/player/${story.id}/${ep.episode_number}`)}
+              className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0"
+            >
+              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">
+                {ep.episode_number}
               </div>
-              <div className="flex-1 text-sm font-semibold text-foreground">{ep.name}</div>
-              {ep.done && (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-primary-deep">Played</span>
-              )}
-            </div>
+              <div className="flex-1 text-sm font-semibold text-foreground">{ep.title}</div>
+              <Play className="h-4 w-4 fill-current text-primary-deep" />
+            </button>
           ))}
         </div>
       </div>
