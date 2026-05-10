@@ -25,6 +25,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/story/:id" element={<StoryDetail />} />
           <Route path="/player/:id" element={<Player />} />
+          <Route path="/player/:id/:episodeNumber" element={<Player />} />
           <Route path="/library" element={<Library />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/admin" element={<Admin />} />

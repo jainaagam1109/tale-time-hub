@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Play, Pause, SkipBack, SkipForward } from "lucide-react";
+import { ChevronLeft, Play, Pause, SkipBack, SkipForward, ChevronRight } from "lucide-react";
 import { fetchStory, fetchEpisodes } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 
@@ -13,23 +13,58 @@ const fmt = (s: number) => {
 };
 
 const Player = () => {
-  const { id = "" } = useParams();
+  const { id = "", episodeNumber = "1" } = useParams();
+  const epNum = parseInt(episodeNumber, 10) || 1;
   const nav = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const shouldAutoplayRef = useRef(false);
   const { data: story } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
-  const { data: episodes } = useQuery({ queryKey: ["episodes", id], queryFn: () => fetchEpisodes(id), enabled: !!id });
-  const firstEpisode = episodes?.[0];
-  const audioUrl = firstEpisode?.audio_url ?? null;
+  const { data: episodes, isLoading: epLoading } = useQuery({
+    queryKey: ["episodes", id],
+    queryFn: () => fetchEpisodes(id),
+    enabled: !!id,
+  });
+
+  const current = episodes?.find((e) => e.episode_number === epNum);
+  const audioUrl = current?.audio_url ?? null;
+  const maxEp = episodes && episodes.length > 0 ? Math.max(...episodes.map((e) => e.episode_number)) : 1;
+  const hasPrev = epNum > 1;
+  const hasNext = !!episodes && epNum < maxEp;
+
   const [playing, setPlaying] = useState(false);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(0);
+
+  // Reset playback when episode (audioUrl) changes
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+    a.pause();
+    a.currentTime = 0;
+    setT(0);
+    setDur(0);
+    setPlaying(false);
+  }, [audioUrl]);
 
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const onTime = () => setT(a.currentTime);
-    const onMeta = () => setDur(a.duration);
-    const onEnd = () => setPlaying(false);
+    const onMeta = () => {
+      setDur(a.duration);
+      if (shouldAutoplayRef.current) {
+        shouldAutoplayRef.current = false;
+        a.play().then(() => setPlaying(true)).catch(() => {});
+      }
+    };
+    const onEnd = () => {
+      if (hasNext) {
+        shouldAutoplayRef.current = true;
+        nav(`/player/${id}/${epNum + 1}`);
+      } else {
+        setPlaying(false);
+      }
+    };
     a.addEventListener("timeupdate", onTime);
     a.addEventListener("loadedmetadata", onMeta);
     a.addEventListener("ended", onEnd);
@@ -38,7 +73,7 @@ const Player = () => {
       a.removeEventListener("loadedmetadata", onMeta);
       a.removeEventListener("ended", onEnd);
     };
-  }, [audioUrl]);
+  }, [audioUrl, hasNext, epNum, id, nav]);
 
   const toggle = () => {
     const a = audioRef.current;
@@ -59,7 +94,30 @@ const Player = () => {
     a.currentTime = Math.max(0, Math.min((a.duration || 0), a.currentTime + delta));
   };
 
+  const goPrev = () => hasPrev && nav(`/player/${id}/${epNum - 1}`);
+  const goNext = () => hasNext && nav(`/player/${id}/${epNum + 1}`);
+
   const pct = dur > 0 ? (t / dur) * 100 : 0;
+
+  // Episode not found state
+  if (episodes && !epLoading && !current) {
+    return (
+      <PhoneShell>
+        <div className="flex-1 px-6 pt-6 pb-10">
+          <button onClick={() => nav(-1)} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+          <div className="mt-20 text-center">
+            <div className="text-5xl">🤔</div>
+            <h2 className="mt-3 text-lg font-extrabold text-foreground">Episode not found</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              This story doesn't have an episode {epNum}.
+            </p>
+          </div>
+        </div>
+      </PhoneShell>
+    );
+  }
 
   return (
     <PhoneShell>
@@ -77,7 +135,9 @@ const Player = () => {
             {story?.theme}
           </div>
           <h1 className="mt-1 text-xl font-extrabold text-foreground">{story?.title ?? "Loading…"}</h1>
-          <div className="text-xs text-muted-foreground">Episode 1 · The beginning</div>
+          <div className="text-xs text-muted-foreground">
+            {current ? `Episode ${current.episode_number} · ${current.title}` : "Loading episode…"}
+          </div>
         </div>
 
         <div className="mt-8">
@@ -90,26 +150,42 @@ const Player = () => {
           </div>
         </div>
 
-        <div className="mt-6 flex items-center justify-center gap-6">
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={goPrev}
+            disabled={!hasPrev}
+            className="text-primary-deep disabled:opacity-30"
+            aria-label="Previous episode"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
           <button onClick={() => skip(-15)} className="text-muted-foreground" aria-label="Back 15s">
-            <SkipBack className="h-7 w-7" />
+            <SkipBack className="h-6 w-6" />
           </button>
           <button
             onClick={toggle}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary text-primary-foreground shadow-glow disabled:opacity-50"
             aria-label={playing ? "Pause" : "Play"}
             disabled={!audioUrl}
           >
             {playing ? <Pause className="h-7 w-7 fill-current" /> : <Play className="h-7 w-7 fill-current" />}
           </button>
           <button onClick={() => skip(15)} className="text-muted-foreground" aria-label="Forward 15s">
-            <SkipForward className="h-7 w-7" />
+            <SkipForward className="h-6 w-6" />
+          </button>
+          <button
+            onClick={goNext}
+            disabled={!hasNext}
+            className="text-primary-deep disabled:opacity-30"
+            aria-label="Next episode"
+          >
+            <ChevronRight className="h-6 w-6" />
           </button>
         </div>
 
-        {!audioUrl && (
+        {!audioUrl && current && (
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            No audio uploaded for this story yet.
+            No audio uploaded for this episode yet.
           </p>
         )}
 

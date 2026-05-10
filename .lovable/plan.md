@@ -1,81 +1,68 @@
-## Lulutales – Phase 1 Build Plan
+## Player page: per-episode playback
 
-A mobile-first audio storytelling app for kids (4–7), inspired by the Storyloom prototype. Phase 1 covers screens, database, and the admin upload flow only — no story/audio generation, no payments, no auth complexity.
+Make the Player page play any episode of a story, navigable via URL, with inline Prev/Next controls and auto-advance.
 
-### Design system (from reference)
+### 1. Routing (`src/App.tsx`)
+- Keep `/player/:id` (defaults to episode 1).
+- Add `/player/:id/:episodeNumber`.
 
-- Soft gradient background: pale blue → cream (`#EAF6FF → #F9FBFF → #FFF7EE`)
-- Primary gradient: `#7C9CFF → #7AD8D0` (buttons, play controls, progress)
-- Card style: white, rounded (12–16px), soft `#E5EEFF` border, subtle shadow
-- Typography: Inter / Nunito, deep navy text (`#28406B`), muted `#7A90AE`
-- Playful tags (peach, mint, blue), emoji thumbnails as placeholders
-- Pill selectors for age/gender/family
-- Bottom nav: Home · Library · Profile
-- Mobile-first: max width ~430px container, comfortable touch targets, sticky bottom nav, scrollable content area
-
-All colors will be tokenized in `index.css` + `tailwind.config.ts` (HSL semantic tokens: `--primary`, `--accent`, `--surface`, `--gradient-warm`, etc.) — no hard-coded colors in components.
-
-### Screens & routes
-
-```
-/onboarding     → About-your-child form (child name, age pills 4–7, gender, family type)
-/               → Home (Ongoing, Recommended, All Stories grid) + bottom nav
-/story/:id      → Story detail (title, theme, description, episodes list, Play CTA)
-/player/:id     → Player (title, episode, play/pause, progress bar, HTML5 audio)
-/library        → Saved stories grid (same card UI as Home)
-/profile        → Placeholder (child profile summary)
-/admin          → Hidden upload form (title, theme, age group, description, audio file, tags)
+```tsx
+<Route path="/player/:id" element={<Player />} />
+<Route path="/player/:id/:episodeNumber" element={<Player />} />
 ```
 
-First-visit logic: if no `child_profiles` row exists locally → redirect to `/onboarding`, else `/`.
+### 2. Param handling (`src/pages/Player.tsx`)
+- `const { id = "", episodeNumber = "1" } = useParams();`
+- `const epNum = parseInt(episodeNumber, 10);`
 
-### Components
+### 3. Episode selection
+- Fetch episodes as today via `useQuery` + `fetchEpisodes(id)`.
+- `const current = episodes?.find(e => e.episode_number === epNum);`
+- `const audioUrl = current?.audio_url ?? null;`
+- Compute `maxEp = Math.max(...episodes.map(e => e.episode_number))` (guard empty).
 
-- `BottomNav` (Home / Library / Profile)
-- `StoryCard` (grid variant + horizontal variant) — emoji thumb, title, theme tag, age, duration
-- `OngoingStoryBanner` (continue-listening card)
-- `SectionHeader` (title + optional "See all")
-- `PillSelector` (reused on onboarding & admin)
-- `PlayerControls` (play/pause, progress bar bound to `<audio>`)
-- `AdminUploadForm`
+### 4. UI updates
+- Replace the hardcoded `"Episode 1 · The beginning"` line with:
+  `Episode {current.episode_number} · {current.title}`
+- If episodes loaded but `current` is undefined → show an "Episode not found" state with a Back button (no transport controls).
 
-### Database (Lovable Cloud / Supabase)
+### 5. Inline Prev / Next controls
+Place inside the existing transport row, flanking the -15 / Play / +15 cluster:
 
-Tables:
+```
+[Prev] [-15s] [Play/Pause] [+15s] [Next]
+```
 
-- **child_profiles** — `id uuid pk`, `name text`, `age int`, `gender text`, `family_type text`, `created_at timestamptz`
-- **stories** — `id uuid pk`, `title text`, `theme text`, `description text`, `type text default 'pre_recorded'`, `age_group text`, `audio_url text`, `duration int`, `is_featured bool default false`, `created_at timestamptz`
-- **story_tags** — `id uuid pk`, `story_id uuid fk → stories`, `tag text`
-- **user_library** — `id uuid pk`, `story_id uuid fk → stories`, `created_at timestamptz`
+- Prev → `nav(\`/player/${id}/${epNum - 1}\`)`, disabled when `epNum <= 1`.
+- Next → `nav(\`/player/${id}/${epNum + 1}\`)`, disabled when `epNum >= maxEp`.
+- Use `ChevronLeft` / `ChevronRight` from lucide-react (already in use).
+- Disabled state: `opacity-40 pointer-events-none`.
 
-RLS: Phase-1 simplification — public read on `stories` and `story_tags`; permissive insert on `child_profiles` and `user_library` (no auth required yet). Admin upload also unauthenticated for now (the `/admin` route is unlinked/hidden; we'll lock it down in a later phase).
+### 6. Reset playback on episode change
+A `useEffect` keyed on `audioUrl` (which changes when episode changes):
+```ts
+useEffect(() => {
+  const a = audioRef.current;
+  if (!a) return;
+  a.pause();
+  a.currentTime = 0;
+  setT(0);
+  setPlaying(false);
+}, [audioUrl]);
+```
+The existing `<audio src={audioUrl}>` already swaps source when `audioUrl` changes.
 
-Storage bucket: **`stories-audio`** (public). Admin upload writes the file, retrieves the public URL, and stores it in `stories.audio_url`.
+### 7. Auto-advance on end
+Update the existing `onEnd` handler:
+- If a next episode exists (`epNum < maxEp`) → `nav(\`/player/${id}/${epNum + 1}\`)`. The reset effect will run, then we trigger `play()` so the next episode begins automatically.
+- Otherwise → `setPlaying(false)` (current behavior).
 
-Seed: a few sample stories (with emoji thumbnails) so Home/Library aren't empty before the first admin upload.
+To auto-play after navigation, use a small effect that, when `audioUrl` changes AND a "shouldAutoplay" ref is set, calls `audio.play()` once metadata is loaded. Set the ref to true right before navigating from `onEnd`.
 
-### Admin upload flow (`/admin`)
+### 8. Persist last story
+Keep the existing `localStorage.setItem("lulutales_last_story", story.id)` on play. No change needed.
 
-Form → on submit:
-1. Upload file to `stories-audio` bucket (filename = `${uuid}.${ext}`)
-2. Get public URL
-3. Insert into `stories` with all fields
-4. Split tags by comma, insert rows into `story_tags`
-5. Toast success + reset form
-
-### What's intentionally NOT built (per scope)
-
-- Story or audio generation
-- Auth (Google/phone/email screens from reference)
-- Narrator selection, premium/paywall, streaks, badges
-- Payments
-- Animations beyond defaults
-
-### Technical notes
-
-- React + Vite + Tailwind + shadcn/ui (existing stack)
-- React Router for the routes above
-- TanStack Query for fetching stories
-- HTML5 `<audio>` element with custom-styled controls for the player
-- File upload via Supabase JS storage client; signed/public URL stored on the row
-- All design tokens added to `index.css`; components reference semantic classes (`bg-primary`, `text-foreground`, `bg-gradient-warm`) — no inline hex colors
+### Out of scope
+- StoryDetail's per-episode Play buttons already navigate to `/player/${id}/${ep.episode_number}` — they'll just work after the route change.
+- No DB changes. No styling refactor beyond adding the two new buttons.
+- No "mark episode complete" tracking yet.
