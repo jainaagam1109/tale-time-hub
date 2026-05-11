@@ -22,6 +22,7 @@ export type Database = {
           gender: string | null
           id: string
           name: string
+          user_id: string
         }
         Insert: {
           age: number
@@ -30,6 +31,7 @@ export type Database = {
           gender?: string | null
           id?: string
           name: string
+          user_id: string
         }
         Update: {
           age?: number
@@ -38,6 +40,7 @@ export type Database = {
           gender?: string | null
           id?: string
           name?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -89,6 +92,8 @@ export type Database = {
           description: string | null
           id: string
           is_featured: boolean
+          is_generated: boolean
+          owner_profile_id: string | null
           theme: string | null
           thumbnail: string | null
           title: string
@@ -100,6 +105,8 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean
+          is_generated?: boolean
+          owner_profile_id?: string | null
           theme?: string | null
           thumbnail?: string | null
           title: string
@@ -111,12 +118,74 @@ export type Database = {
           description?: string | null
           id?: string
           is_featured?: boolean
+          is_generated?: boolean
+          owner_profile_id?: string | null
           theme?: string | null
           thumbnail?: string | null
           title?: string
           type?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stories_owner_profile_id_fkey"
+            columns: ["owner_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      story_analytics: {
+        Row: {
+          created_at: string
+          episode_id: string | null
+          event_type: string
+          id: string
+          position_seconds: number | null
+          profile_id: string
+          story_id: string
+        }
+        Insert: {
+          created_at?: string
+          episode_id?: string | null
+          event_type: string
+          id?: string
+          position_seconds?: number | null
+          profile_id: string
+          story_id: string
+        }
+        Update: {
+          created_at?: string
+          episode_id?: string | null
+          event_type?: string
+          id?: string
+          position_seconds?: number | null
+          profile_id?: string
+          story_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "story_analytics_episode_id_fkey"
+            columns: ["episode_id"]
+            isOneToOne: false
+            referencedRelation: "episodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_analytics_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "story_analytics_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       story_tags: {
         Row: {
@@ -148,19 +217,29 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          profile_id: string
           story_id: string
         }
         Insert: {
           created_at?: string
           id?: string
+          profile_id: string
           story_id: string
         }
         Update: {
           created_at?: string
           id?: string
+          profile_id?: string
           story_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_library_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_library_story_id_fkey"
             columns: ["story_id"]
@@ -175,7 +254,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      can_access_story: { Args: { _story_id: string }; Returns: boolean }
+      owns_profile: { Args: { _profile_id: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

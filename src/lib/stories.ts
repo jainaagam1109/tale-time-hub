@@ -4,6 +4,9 @@ import type { Tables } from "@/integrations/supabase/types";
 export type Story = Tables<"stories">;
 export type Episode = Tables<"episodes">;
 
+const getActiveProfileId = (): string | null =>
+  typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
+
 export const fetchEpisodes = async (storyId: string): Promise<Episode[]> => {
   const { data, error } = await supabase
     .from("episodes")
@@ -15,6 +18,7 @@ export const fetchEpisodes = async (storyId: string): Promise<Episode[]> => {
 };
 
 export const fetchStories = async (): Promise<Story[]> => {
+  // RLS already returns global stories + ones owned by this user's kids.
   const { data, error } = await supabase
     .from("stories")
     .select("*")
@@ -36,25 +40,41 @@ export const fetchStoryTags = async (storyId: string): Promise<string[]> => {
 };
 
 export const fetchSavedStories = async (): Promise<Story[]> => {
+  const profileId = getActiveProfileId();
+  if (!profileId) return [];
   const { data, error } = await supabase
     .from("user_library")
     .select("story_id, stories(*)")
+    .eq("profile_id", profileId)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return (data ?? []).map((r: any) => r.stories).filter(Boolean);
 };
 
 export const isSaved = async (storyId: string): Promise<boolean> => {
-  const { data } = await supabase.from("user_library").select("id").eq("story_id", storyId).maybeSingle();
+  const profileId = getActiveProfileId();
+  if (!profileId) return false;
+  const { data } = await supabase
+    .from("user_library")
+    .select("id")
+    .eq("story_id", storyId)
+    .eq("profile_id", profileId)
+    .maybeSingle();
   return !!data;
 };
 
 export const toggleSaved = async (storyId: string): Promise<boolean> => {
+  const profileId = getActiveProfileId();
+  if (!profileId) return false;
   const saved = await isSaved(storyId);
   if (saved) {
-    await supabase.from("user_library").delete().eq("story_id", storyId);
+    await supabase
+      .from("user_library")
+      .delete()
+      .eq("story_id", storyId)
+      .eq("profile_id", profileId);
     return false;
   }
-  await supabase.from("user_library").insert({ story_id: storyId });
+  await supabase.from("user_library").insert({ story_id: storyId, profile_id: profileId });
   return true;
 };
