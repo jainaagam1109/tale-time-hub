@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { PhoneShell } from "@/components/PhoneShell";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const ages = [4, 5, 6, 7];
 const genders = ["Girl", "Boy", "Prefer not to say"];
@@ -30,13 +31,19 @@ const Pill = ({ active, onClick, children }: any) => (
 
 const Onboarding = () => {
   const nav = useNavigate();
+  const { session, loading: authLoading } = useAuth();
   const [name, setName] = useState("");
   const [age, setAge] = useState<number>(5);
   const [gender, setGender] = useState<string>("");
   const [family, setFamily] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (!authLoading && !session) nav("/auth", { replace: true });
+  }, [session, authLoading, nav]);
+
   const submit = async () => {
+    if (!session) return;
     const parsed = schema.safeParse({ name, age });
     if (!parsed.success) {
       toast.error(parsed.error.errors[0].message);
@@ -45,7 +52,13 @@ const Onboarding = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("child_profiles")
-      .insert({ name: name.trim(), age, gender: gender || null, family_type: family || null })
+      .insert({
+        name: name.trim(),
+        age,
+        gender: gender || null,
+        family_type: family || null,
+        user_id: session.user.id,
+      })
       .select()
       .single();
     setLoading(false);
@@ -55,6 +68,7 @@ const Onboarding = () => {
     }
     localStorage.setItem("lulutales_profile_id", data.id);
     localStorage.setItem("lulutales_child_name", data.name);
+    localStorage.setItem("lulutales_child_age", String(data.age));
     nav("/");
   };
 
