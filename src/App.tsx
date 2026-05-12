@@ -41,6 +41,11 @@ const App = () => (
             <Route path="/library" element={<RequireAuth><Library /></RequireAuth>} />
             <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
+            <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/insights" element={<RequireAuth><Insights /></RequireAuth>} />
+            <Route path="/magic-hub" element={<RequireAuth><MagicHub /></RequireAuth>} />
+            <Route path="/magic-hub/audio" element={<RequireAuth><AudioStoryForm /></RequireAuth>} />
+            <Route path="/magic-hub/bedtime" element={<RequireAuth><BedtimeStoryForm /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
