@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Play, Pause, SkipBack, SkipForward, ChevronRight } from "lucide-react";
+import { ChevronLeft, Play, Pause } from "lucide-react";
 import { fetchStory, fetchEpisodes } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 
