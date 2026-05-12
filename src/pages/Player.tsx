@@ -152,15 +152,10 @@ const Player = () => {
 
         <div className="mt-6 flex items-center justify-center gap-4">
           <button
-            onClick={goPrev}
-            disabled={!hasPrev}
-            className="text-primary-deep disabled:opacity-30"
-            aria-label="Previous episode"
+            onClick={() => skip(-10)}
+            className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-primary-deep"
           >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <button onClick={() => skip(-15)} className="text-muted-foreground" aria-label="Back 15s">
-            <SkipBack className="h-6 w-6" />
+            - 10s
           </button>
           <button
             onClick={toggle}
@@ -170,16 +165,11 @@ const Player = () => {
           >
             {playing ? <Pause className="h-7 w-7 fill-current" /> : <Play className="h-7 w-7 fill-current" />}
           </button>
-          <button onClick={() => skip(15)} className="text-muted-foreground" aria-label="Forward 15s">
-            <SkipForward className="h-6 w-6" />
-          </button>
           <button
-            onClick={goNext}
-            disabled={!hasNext}
-            className="text-primary-deep disabled:opacity-30"
-            aria-label="Next episode"
+            onClick={() => skip(10)}
+            className="rounded-full border border-border bg-card px-4 py-2 text-xs font-semibold text-primary-deep"
           >
-            <ChevronRight className="h-6 w-6" />
+            + 10s
           </button>
         </div>
 
@@ -189,9 +179,7 @@ const Player = () => {
           </p>
         )}
 
-        {audioUrl && (
-          <audio ref={audioRef} src={audioUrl} preload="metadata" className="mt-6 w-full" controls />
-        )}
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="metadata" className="hidden" />}
       </div>
     </PhoneShell>
   );
