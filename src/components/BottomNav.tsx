@@ -1,10 +1,10 @@
 import { NavLink } from "react-router-dom";
-import { Home, Library, User } from "lucide-react";
+import { Home, LayoutDashboard, User } from "lucide-react";
 import { MiniPlayer } from "./MiniPlayer";
 
 const items = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/library", label: "Library", icon: Library },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/profile", label: "Profile", icon: User },
 ];
 
