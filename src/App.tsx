@@ -14,6 +14,11 @@ import Player from "./pages/Player";
 import Library from "./pages/Library";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
+import Dashboard from "./pages/Dashboard";
+import Insights from "./pages/Insights";
+import MagicHub from "./pages/MagicHub";
+import AudioStoryForm from "./pages/AudioStoryForm";
+import BedtimeStoryForm from "./pages/BedtimeStoryForm";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
