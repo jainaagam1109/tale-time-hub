@@ -17,6 +17,34 @@ export const fetchEpisodes = async (storyId: string): Promise<Episode[]> => {
   return data ?? [];
 };
 
+export const fetchStoriesForProfile = async (profileId: string): Promise<Story[]> => {
+  const { data, error } = await supabase
+    .from("stories")
+    .select("*")
+    .eq("child_profile_id", profileId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+};
+
+export const createPersonalisedStory = async (input: {
+  title: string;
+  theme: string | null;
+  description: string | null;
+  story_type: "personalised_audio" | "bedtime_text";
+  age_group: string | null;
+  child_profile_id: string;
+  thumbnail?: string;
+}): Promise<Story> => {
+  const { data, error } = await supabase
+    .from("stories")
+    .insert({ ...input, is_featured: false })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+};
+
 export const fetchStories = async (): Promise<Story[]> => {
   // RLS already returns global stories + ones owned by this user's kids.
   const { data, error } = await supabase
