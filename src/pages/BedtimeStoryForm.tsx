@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ChevronLeft, ArrowRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneShell } from "@/components/PhoneShell";
+import { FloatingMiniPlayer } from "@/components/FloatingMiniPlayer";
 import { FieldLabel, Pill, TextInput } from "@/components/StoryFormFields";
 import { createPersonalisedStory } from "@/lib/stories";
 
@@ -175,6 +176,7 @@ const BedtimeStoryForm = () => {
           Create story <ArrowRight className="h-4 w-4" />
         </button>
       </main>
+      <FloatingMiniPlayer />
     </PhoneShell>
   );
 };
