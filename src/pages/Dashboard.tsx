@@ -38,11 +38,11 @@ const Dashboard = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-5">
-        {ongoing && (
-          <section>
-            <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Ongoing story
-            </h2>
+        <section>
+          <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            Ongoing story
+          </h2>
+          {ongoing ? (
             <div className="rounded-2xl border border-border bg-card p-4 shadow-soft">
               <div className="flex items-center gap-3">
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-card text-3xl">
@@ -65,8 +65,15 @@ const Dashboard = () => {
               </div>
               <div className="mt-1 text-[10px] text-muted-foreground">25% complete</div>
             </div>
-          </section>
-        )}
+          ) : (
+            <button
+              onClick={() => nav("/magic-hub")}
+              className="block w-full rounded-2xl border border-dashed border-border bg-card p-4 text-left text-sm text-muted-foreground shadow-soft"
+            >
+              No stories yet — create one in Magic Hub ✨
+            </button>
+          )}
+        </section>
 
         <section className="rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-4">
           <div className="text-[10px] font-semibold uppercase tracking-wider text-tag-warm-fg">Today's insight</div>
