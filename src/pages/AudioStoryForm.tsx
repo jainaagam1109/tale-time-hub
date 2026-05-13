@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, ArrowRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneShell } from "@/components/PhoneShell";
 import { FieldLabel, Pill, TextInput } from "@/components/StoryFormFields";
+import { createPersonalisedStory } from "@/lib/stories";
 
 const CITIES = ["Bengaluru", "Mumbai", "Delhi", "Chennai", "Hyderabad", "Pune", "Kolkata", "Other"];
 const TONES = ["😄 Warm + funny", "🌙 Quiet + gentle", "🌟 Adventurous", "✨ Magical"];
@@ -14,6 +15,7 @@ const AudioStoryForm = () => {
   const childName = localStorage.getItem("lulutales_child_name") ?? "Your child";
   const childAge = localStorage.getItem("lulutales_child_age") ?? "";
   const childGender = localStorage.getItem("lulutales_child_gender") ?? "";
+  const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
 
   const [city, setCity] = useState("Bengaluru");
   const [otherCity, setOtherCity] = useState("");
@@ -25,8 +27,26 @@ const AudioStoryForm = () => {
   const toggleOccasion = (o: string) =>
     setOccasions((prev) => (prev.includes(o) ? prev.filter((x) => x !== o) : [...prev, o]));
 
-  const submit = () => {
-    toast.success("Narrator selection coming soon. Your story request has been saved.");
+  const submit = async () => {
+    if (!profileId) {
+      toast.error("Please complete onboarding first.");
+      return;
+    }
+    try {
+      await createPersonalisedStory({
+        title: `${childName}'s ${theme} Story`,
+        theme,
+        description: null,
+        story_type: "personalised_audio",
+        age_group: childAge || null,
+        child_profile_id: profileId,
+        thumbnail: "✨",
+      });
+      toast.success("Story request saved! We'll generate it shortly.");
+      nav("/dashboard");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save story");
+    }
   };
 
   return (
@@ -39,6 +59,17 @@ const AudioStoryForm = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-5">
+        {!profileId && (
+          <div className="flex items-start gap-2 rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-3 text-xs text-tag-warm-fg">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <div>
+              No child profile found.{" "}
+              <Link to="/onboarding" className="font-bold underline">
+                Please complete onboarding first.
+              </Link>
+            </div>
+          </div>
+        )}
         <div className="rounded-2xl border border-border bg-card p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
             <span>Monthly usage</span>
