@@ -49,7 +49,13 @@ const Player = () => {
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
-    const onTime = () => setT(a.currentTime);
+    const onTime = () => {
+      setT(a.currentTime);
+      if (a.duration > 0 && id) {
+        const pct = Math.floor((a.currentTime / a.duration) * 100);
+        localStorage.setItem("lulutales_last_story_progress", String(pct));
+      }
+    };
     const onMeta = () => {
       setDur(a.duration);
       if (shouldAutoplayRef.current) {
@@ -62,6 +68,7 @@ const Player = () => {
         shouldAutoplayRef.current = true;
         nav(`/player/${id}/${epNum + 1}`);
       } else {
+        localStorage.setItem("lulutales_last_story_completed", "1");
         setPlaying(false);
       }
     };
@@ -84,7 +91,10 @@ const Player = () => {
     } else {
       a.play();
       setPlaying(true);
-      if (story?.id) localStorage.setItem("lulutales_last_story", story.id);
+      if (story?.id) {
+        localStorage.setItem("lulutales_last_story", story.id);
+        localStorage.removeItem("lulutales_last_story_completed");
+      }
     }
   };
 
