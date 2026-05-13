@@ -27,8 +27,26 @@ const AudioStoryForm = () => {
   const toggleOccasion = (o: string) =>
     setOccasions((prev) => (prev.includes(o) ? prev.filter((x) => x !== o) : [...prev, o]));
 
-  const submit = () => {
-    toast.success("Narrator selection coming soon. Your story request has been saved.");
+  const submit = async () => {
+    if (!profileId) {
+      toast.error("Please complete onboarding first.");
+      return;
+    }
+    try {
+      await createPersonalisedStory({
+        title: `${childName}'s ${theme} Story`,
+        theme,
+        description: null,
+        story_type: "personalised_audio",
+        age_group: childAge || null,
+        child_profile_id: profileId,
+        thumbnail: "✨",
+      });
+      toast.success("Story request saved! We'll generate it shortly.");
+      nav("/dashboard");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save story");
+    }
   };
 
   return (
