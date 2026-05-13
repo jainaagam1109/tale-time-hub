@@ -59,6 +59,17 @@ const AudioStoryForm = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-5">
+        {!profileId && (
+          <div className="flex items-start gap-2 rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-3 text-xs text-tag-warm-fg">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <div>
+              No child profile found.{" "}
+              <Link to="/onboarding" className="font-bold underline">
+                Please complete onboarding first.
+              </Link>
+            </div>
+          </div>
+        )}
         <div className="rounded-2xl border border-border bg-card p-3">
           <div className="mb-2 flex items-center justify-between text-[10px] uppercase tracking-wider text-muted-foreground">
             <span>Monthly usage</span>
