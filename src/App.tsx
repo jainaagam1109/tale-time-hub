@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,7 +11,7 @@ import SelectProfile from "./pages/SelectProfile";
 import Onboarding from "./pages/Onboarding";
 import StoryDetail from "./pages/StoryDetail";
 import Player from "./pages/Player";
-import Library from "./pages/Library";
+import HappyPlace from "./pages/HappyPlace";
 import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import Dashboard from "./pages/Dashboard";
@@ -38,10 +38,11 @@ const App = () => (
             <Route path="/story/:id" element={<RequireAuth><StoryDetail /></RequireAuth>} />
             <Route path="/player/:id" element={<RequireAuth><Player /></RequireAuth>} />
             <Route path="/player/:id/:episodeNumber" element={<RequireAuth><Player /></RequireAuth>} />
-            <Route path="/library" element={<RequireAuth><Library /></RequireAuth>} />
+            <Route path="/happy-place" element={<RequireAuth><HappyPlace /></RequireAuth>} />
+            <Route path="/library" element={<Navigate to="/happy-place" replace />} />
             <Route path="/profile" element={<RequireAuth><Profile /></RequireAuth>} />
             <Route path="/admin" element={<RequireAuth><Admin /></RequireAuth>} />
-            <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
             <Route path="/insights" element={<RequireAuth><Insights /></RequireAuth>} />
             <Route path="/magic-hub" element={<RequireAuth><MagicHub /></RequireAuth>} />
             <Route path="/magic-hub/audio" element={<RequireAuth><AudioStoryForm /></RequireAuth>} />
