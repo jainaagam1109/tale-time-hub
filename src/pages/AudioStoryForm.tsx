@@ -15,6 +15,7 @@ const AudioStoryForm = () => {
   const childName = localStorage.getItem("lulutales_child_name") ?? "Your child";
   const childAge = localStorage.getItem("lulutales_child_age") ?? "";
   const childGender = localStorage.getItem("lulutales_child_gender") ?? "";
+  const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
 
   const [city, setCity] = useState("Bengaluru");
   const [otherCity, setOtherCity] = useState("");
