@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, ChevronRight, Headphones, Moon, BookOpen } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
+import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 
 const MagicHub = () => {
   const nav = useNavigate();
