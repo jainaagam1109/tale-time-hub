@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Play, Sparkles, BarChart3, ChevronRight } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
+import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 import { fetchStoriesForProfile } from "@/lib/stories";
 
 const Dashboard = () => {
@@ -27,13 +28,11 @@ const Dashboard = () => {
 
   return (
     <PhoneShell>
-      <header className="flex items-center justify-between px-5 pt-6 pb-4">
-        <div>
+      <header className="flex items-center gap-3 px-5 pt-6 pb-4">
+        <ProfileAvatarButton />
+        <div className="flex-1">
           <div className="text-xs text-muted-foreground">Good evening,</div>
           <h1 className="text-2xl font-extrabold text-foreground">{childName}</h1>
-        </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-primary text-lg font-extrabold text-primary-foreground">
-          {childName.charAt(0).toUpperCase()}
         </div>
       </header>
 

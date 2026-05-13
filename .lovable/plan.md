@@ -1,82 +1,93 @@
-# Add Auth + User → Kid Profiles → Stories/Analytics
+## Goal
 
-Goal: gate the app behind login, link existing `child_profiles` to the logged-in user, support multiple kids per user with a picker screen, and lay schema groundwork for per-kid generated stories and analytics.
+Restructure the app's navigation and profile entry point so they match the attached screenshots, make the active tab obvious, and keep the audio player visible on every screen until the story finishes.
 
-## 1. Auth setup
+---
 
-- Enable **Email + Password** and **Google** sign-in (Lovable Cloud managed Google OAuth — no keys needed).
-- Auto-confirm email signups (faster testing, per your choice).
-- No `profiles` table needed yet (no display name/avatar requested) — we use `auth.users` directly. We can add one later if needed.
+## 1. Bottom Nav rework (`src/components/BottomNav.tsx`)
 
-## 2. Database changes (single migration)
+New three-tab structure (left → right):
 
-**`child_profiles`** — link to user
-- Add `user_id UUID NOT NULL` (references `auth.users(id)` ON DELETE CASCADE).
-- Backfill: existing rows get a placeholder user or are wiped (test data — will confirm during implementation; default plan: delete existing rows since they're orphaned test data).
-- Replace open RLS with: user can `SELECT/INSERT/UPDATE/DELETE` only rows where `user_id = auth.uid()`.
+1. **Home** (`/`) — `LayoutDashboard` icon. Shows the current Dashboard content (greeting, ongoing story, streak, badges, insight card, generate-story shortcut).
+2. **My Happy Place** (`/happy-place`) — `Heart` icon. Collection of all stories the child has access to: pre-recorded + personalised audio + bedtime stories tied to the active child profile, plus saved/favourited stories.
+3. **Magic Hub** (`/magic-hub`) — `Star` icon with a small `PREMIUM` pill badge next to the label, matching the screenshot.
 
-**`stories`** — add ownership flag
-- Add `owner_profile_id UUID NULL` (references `child_profiles(id)` ON DELETE CASCADE). NULL = global/admin story.
-- Add `is_generated BOOLEAN NOT NULL DEFAULT false`.
-- RLS: anyone authenticated can `SELECT` global stories (`owner_profile_id IS NULL`) OR stories they own (joined via their kid profiles). Insert/update/delete restricted to owner (admin path stays open for now via service role / admin route — to be tightened later).
+**Active state**: the active tab gets a soft elevated card look — `bg-card`, `shadow-soft`, `rounded-2xl`, `text-primary-deep`, and the icon switches to the gradient-primary fill treatment. Inactive tabs stay flat with `text-muted-foreground`. This makes the current screen unmistakable.
 
-**`episodes`** and **`story_tags`** — RLS follows parent story (visible if parent story is visible).
+---
 
-**`user_library`** — add `profile_id UUID NOT NULL` (which kid saved it). RLS: only the owning user.
+## 2. Profile entry point — top-left avatar
 
-**New: `story_analytics`**
-- Columns: `id`, `profile_id` (FK child_profiles), `story_id` (FK stories), `episode_id` (FK episodes, nullable), `event_type` TEXT (e.g. `play_start`, `play_complete`, `progress`), `position_seconds` INT, `created_at`.
-- RLS: user can insert/select rows for their own kid profiles only.
+Profile is removed from the bottom nav and replaced by a circular avatar button in the **top-left** of every main screen (Home, My Happy Place, Magic Hub, Insights). Tapping it routes to `/profile`.
 
-All tables get `ON DELETE CASCADE` where appropriate. Validation triggers (not CHECK) for any time-based rules.
+A new small component `ProfileAvatarButton` renders the active child's initial inside the existing gradient-primary circle, sized `h-10 w-10`. Each page header is updated to place this button on the left and keep the greeting/title to its right.
 
-## 3. App flow
+---
 
-```text
-/auth  ──────────►  /select-profile  ──►  /onboarding  ──►  /  (Home)
-                          │  (if 0 kids)        │
-                          │                     ▼
-                          └──► pick kid ───►  /  (Home, active kid stored locally)
-```
+## 3. Routing changes (`src/App.tsx`)
 
-- **Not logged in** → redirect to `/auth`.
-- **Logged in, 0 kid profiles** → `/onboarding` (creates first kid).
-- **Logged in, 1 kid profile** → auto-select, go to `/`.
-- **Logged in, 2+ kid profiles** → `/select-profile` picker.
-- Active kid stored in `localStorage` as `lulutales_profile_id` (already in use). Switchable from Profile page.
+- `/` → renders the new **Home** page (current Dashboard content).
+- `/happy-place` → new **My Happy Place** page.
+- `/magic-hub` → unchanged.
+- `/profile` → unchanged route, redesigned content (see §5).
+- `/dashboard` → redirect to `/` for back-compat.
+- `/library` stays as a redirect to `/happy-place` so old links don't break.
+- The current `Index.tsx` (search/browse view) is repurposed to live inside My Happy Place, OR kept under a sub-route — see §4.
 
-## 4. New / changed pages & components
+---
 
-**New**
-- `src/pages/Auth.tsx` — tabbed Email/Password sign-in & sign-up + "Continue with Google" button. Uses `supabase.auth.signUp`, `signInWithPassword`, and `lovable.auth.signInWithOAuth("google", ...)`.
-- `src/pages/SelectProfile.tsx` — grid of kid avatars/names + "Add another child" button (→ `/onboarding`).
-- `src/hooks/useAuth.tsx` — `AuthProvider` + `useAuth()`. Sets up `onAuthStateChange` BEFORE `getSession()`, exposes `{ user, session, loading, signOut }`.
-- `src/components/RequireAuth.tsx` — route guard that redirects unauthenticated users to `/auth` and routes users with no kid to `/onboarding` / picker.
+## 4. My Happy Place page (`src/pages/HappyPlace.tsx`, new)
 
-**Changed**
-- `src/App.tsx` — wrap routes in `AuthProvider`, add `/auth` and `/select-profile`, wrap protected routes in `<RequireAuth>`.
-- `src/pages/Index.tsx` — new logic: if no session → `/auth`; else delegate to `RequireAuth` flow.
-- `src/pages/Onboarding.tsx` — insert `child_profiles` with `user_id: session.user.id`. After save, if it's the first kid go to `/`, otherwise back to `/select-profile`.
-- `src/pages/Profile.tsx` — show logged-in email, list kid profiles, "Switch profile", "Add child", "Sign out".
-- `src/lib/stories.ts` — `fetchStories` filters `owner_profile_id IS NULL OR owner_profile_id = activeProfileId`. `user_library` queries scoped to active profile.
+Single screen that lists every story available to the active child profile:
 
-## 5. Out of scope (this step)
+- **Section: Personalised** — stories where `story_type` is `personalised_audio` or `bedtime_text` and `child_profile_id` matches the active profile.
+- **Section: All stories** — global pre-recorded stories (current `fetchStories` minus personalised ones).
+- **Section: Saved** — output of `fetchSavedStories`.
 
-- The actual story-generation feature (we only add `is_generated` + `owner_profile_id` columns so it's ready).
-- Analytics dashboard UI (only the table + a small `logEvent` helper that Player can call later).
-- Admin role enforcement on `/admin` (remains open as today; can be hardened in a follow-up with a `user_roles` table).
-- Password reset flow (can be added later with a `/reset-password` page).
+Reuses `StoryCard` and the existing search/theme filter UI from the current `Home.tsx` so no functionality is lost.
 
-## 6. Technical details (for implementation)
+---
 
-- Auth client: `supabase.auth.*` for email/password; `lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin })` for Google (will run `configure_social_auth` to scaffold the lovable module).
-- Session listener pattern:
-  ```ts
-  useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
-    supabase.auth.getSession().then(({ data }) => setSession(data.session));
-    return () => sub.subscription.unsubscribe();
-  }, []);
-  ```
-- Active profile selection logic lives in `RequireAuth` so every protected page benefits.
-- Existing `localStorage.lulutales_profile_id` key is reused; cleared on sign-out.
+## 5. Profile screen redesign (`src/pages/Profile.tsx`)
+
+Match the second attached screenshot:
+
+- Back chevron + page title.
+- Header card: avatar circle, parent name, "Parent account · N child profiles".
+- **Session settings** card: "Session time limit — App auto-pauses after this many minutes" with a numeric input (default 30, stored in `localStorage` as `lulutales_session_minutes`).
+- Stacked list rows, each with an icon tile + label + chevron:
+  - **View Insights** → `/insights`
+  - **Open / Add kids' profiles** → expands inline to show the existing kid switcher + "Add child" button (current logic preserved).
+  - **Permissions** → toast "Coming soon" for now.
+  - **Share app** → uses `navigator.share` if available, else copies link to clipboard.
+  - **Contact us** → `mailto:hello@storyloom.app`.
+  - **Log out** → red text, current `signOut` flow.
+
+No bottom nav on this screen (it's a sub-page of the avatar button), keeping the back chevron as the only return path.
+
+---
+
+## 6. Persistent MiniPlayer above bottom nav
+
+The existing `MiniPlayer` already renders inside `BottomNav`. Updates:
+
+- Show whenever `localStorage.lulutales_last_story` is set AND playback hasn't completed (track completion via a new `lulutales_last_story_completed` flag set by `Player.tsx` when audio `ended` fires; cleared when a new story starts).
+- Visible on every screen that has `BottomNav` (Home, Happy Place, Magic Hub, Insights). Also mount it above the back button on screens without `BottomNav` (Profile, Magic Hub sub-forms) via a lightweight `<FloatingMiniPlayer />` that reuses the same component but without the nav bar.
+- Copy + layout match the attached screenshot: headphone tile, story title, sub-line "Continue listening · {progress}% complete · tap to resume", and a circular gradient play button on the right. Progress percentage is read from `localStorage.lulutales_last_story_progress` which `Player.tsx` writes on `timeupdate`.
+
+---
+
+## Technical details
+
+- New file: `src/pages/HappyPlace.tsx` (combines personalised + all + saved).
+- New file: `src/components/ProfileAvatarButton.tsx`.
+- New file: `src/components/FloatingMiniPlayer.tsx` (wrapper around `MiniPlayer` for non-nav screens).
+- Edit: `src/components/BottomNav.tsx` — three tabs, active-state styling.
+- Edit: `src/components/MiniPlayer.tsx` — read progress + completion flags, update layout/copy.
+- Edit: `src/pages/Player.tsx` — write `lulutales_last_story_progress` on `timeupdate`, set `lulutales_last_story_completed` on `ended`, clear on new playback.
+- Edit: `src/pages/Index.tsx` — render new Home (Dashboard) content; or rename current `Dashboard.tsx` → `Home.tsx` and point `/` at it. Old `Home.tsx` browse view is deleted (its functionality moves into `HappyPlace.tsx`).
+- Edit: `src/pages/Profile.tsx` — full redesign per §5.
+- Edit: `src/App.tsx` — add `/happy-place`, redirect `/dashboard` → `/` and `/library` → `/happy-place`.
+- Edit each main page header (Home, Happy Place, Magic Hub, Insights) to mount `ProfileAvatarButton` in the top-left.
+
+No database or backend changes required.

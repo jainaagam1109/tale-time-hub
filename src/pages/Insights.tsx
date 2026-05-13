@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Clock, CheckCircle2 } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
+import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 
 const habits = [
   { label: "Healthy eating", value: 80 },
@@ -16,9 +17,12 @@ const Insights = () => {
   return (
     <PhoneShell>
       <header className="px-5 pt-4 pb-2">
-        <button onClick={() => nav(-1)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
-          <ChevronLeft className="h-4 w-4" /> Back
-        </button>
+        <div className="mb-3 flex items-center justify-between">
+          <ProfileAvatarButton />
+          <button onClick={() => nav(-1)} className="flex items-center gap-1 text-xs text-primary-deep">
+            <ChevronLeft className="h-4 w-4" /> Back
+          </button>
+        </div>
         <h1 className="text-2xl font-extrabold text-foreground">What {childName} learned</h1>
       </header>
 
