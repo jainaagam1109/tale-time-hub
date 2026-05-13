@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronLeft, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, ArrowRight, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneShell } from "@/components/PhoneShell";
 import { FieldLabel, Pill, TextInput } from "@/components/StoryFormFields";
+import { createPersonalisedStory } from "@/lib/stories";
 
 const CITIES = ["Bengaluru", "Mumbai", "Delhi", "Chennai", "Hyderabad", "Pune", "Kolkata", "Other"];
 const TONES = ["😄 Warm + funny", "🌙 Quiet + gentle", "🌟 Adventurous", "✨ Magical"];
