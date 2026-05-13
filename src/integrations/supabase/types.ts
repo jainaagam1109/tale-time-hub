@@ -88,12 +88,14 @@ export type Database = {
       stories: {
         Row: {
           age_group: string | null
+          child_profile_id: string | null
           created_at: string
           description: string | null
           id: string
           is_featured: boolean
           is_generated: boolean
           owner_profile_id: string | null
+          story_type: string | null
           theme: string | null
           thumbnail: string | null
           title: string
@@ -101,12 +103,14 @@ export type Database = {
         }
         Insert: {
           age_group?: string | null
+          child_profile_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_featured?: boolean
           is_generated?: boolean
           owner_profile_id?: string | null
+          story_type?: string | null
           theme?: string | null
           thumbnail?: string | null
           title: string
@@ -114,18 +118,27 @@ export type Database = {
         }
         Update: {
           age_group?: string | null
+          child_profile_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           is_featured?: boolean
           is_generated?: boolean
           owner_profile_id?: string | null
+          story_type?: string | null
           theme?: string | null
           thumbnail?: string | null
           title?: string
           type?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stories_child_profile_id_fkey"
+            columns: ["child_profile_id"]
+            isOneToOne: false
+            referencedRelation: "child_profiles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stories_owner_profile_id_fkey"
             columns: ["owner_profile_id"]
