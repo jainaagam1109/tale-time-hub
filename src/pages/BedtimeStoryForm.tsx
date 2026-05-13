@@ -31,8 +31,26 @@ const BedtimeStoryForm = () => {
   const toggleOccasion = (o: string) =>
     setOccasions((prev) => (prev.includes(o) ? prev.filter((x) => x !== o) : [...prev, o]));
 
-  const submit = () => {
-    toast.success("Your bedtime story request has been saved. We'll notify you when it's ready.");
+  const submit = async () => {
+    if (!profileId) {
+      toast.error("Please complete onboarding first.");
+      return;
+    }
+    try {
+      await createPersonalisedStory({
+        title: `${childName}'s ${theme} Story`,
+        theme,
+        description: null,
+        story_type: "bedtime_text",
+        age_group: childAge || null,
+        child_profile_id: profileId,
+        thumbnail: "✨",
+      });
+      toast.success("Story request saved! We'll generate it shortly.");
+      nav("/dashboard");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save story");
+    }
   };
 
   return (
