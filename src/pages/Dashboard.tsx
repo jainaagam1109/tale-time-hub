@@ -3,12 +3,17 @@ import { useQuery } from "@tanstack/react-query";
 import { Play, Sparkles, BarChart3, ChevronRight } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
-import { fetchStories } from "@/lib/stories";
+import { fetchStoriesForProfile } from "@/lib/stories";
 
 const Dashboard = () => {
   const nav = useNavigate();
   const childName = localStorage.getItem("lulutales_child_name") ?? "friend";
-  const { data: stories = [] } = useQuery({ queryKey: ["stories"], queryFn: fetchStories });
+  const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
+  const { data: stories = [] } = useQuery({
+    queryKey: ["stories-for-profile", profileId],
+    queryFn: () => (profileId ? fetchStoriesForProfile(profileId) : Promise.resolve([])),
+    enabled: !!profileId,
+  });
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
   const ongoing = stories.find((s) => s.id === lastId) ?? stories[0];
