@@ -17,29 +17,44 @@ export type Database = {
       child_profiles: {
         Row: {
           age: number
+          city: string | null
           created_at: string
+          family_address_terms: string | null
+          family_members: string | null
           family_type: string | null
           gender: string | null
+          home_type: string | null
           id: string
           name: string
+          personality: string | null
           user_id: string
         }
         Insert: {
           age: number
+          city?: string | null
           created_at?: string
+          family_address_terms?: string | null
+          family_members?: string | null
           family_type?: string | null
           gender?: string | null
+          home_type?: string | null
           id?: string
           name: string
+          personality?: string | null
           user_id: string
         }
         Update: {
           age?: number
+          city?: string | null
           created_at?: string
+          family_address_terms?: string | null
+          family_members?: string | null
           family_type?: string | null
           gender?: string | null
+          home_type?: string | null
           id?: string
           name?: string
+          personality?: string | null
           user_id?: string
         }
         Relationships: []
