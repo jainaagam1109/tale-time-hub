@@ -10,6 +10,10 @@ import {
   Mail,
   LogOut,
   Plus,
+  Pencil,
+  Info,
+  Check,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PhoneShell } from "@/components/PhoneShell";
@@ -17,7 +21,18 @@ import { FloatingMiniPlayer } from "@/components/FloatingMiniPlayer";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
-type Kid = { id: string; name: string; age: number };
+type Kid = {
+  id: string;
+  name: string;
+  age: number;
+  gender: string | null;
+  family_type: string | null;
+  city: string | null;
+  personality: string | null;
+  home_type: string | null;
+  family_members: string | null;
+  family_address_terms: string | null;
+};
 
 const Row = ({
   icon: Icon,
@@ -51,6 +66,48 @@ const Row = ({
   </button>
 );
 
+const InfoTooltip = ({ text }: { text: string }) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className="relative inline-block align-middle">
+      <button
+        type="button"
+        onClick={() => setShow((v) => !v)}
+        className="ml-1 text-muted-foreground hover:text-primary-deep"
+      >
+        <Info className="h-3.5 w-3.5" />
+      </button>
+      {show && (
+        <div
+          className="absolute left-1/2 top-full z-10 mt-1 w-56 -translate-x-1/2 rounded-xl border border-border bg-card p-2.5 text-[11px] text-foreground shadow-soft"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {text}
+          <button
+            onClick={() => setShow(false)}
+            className="mt-1 block w-full text-center text-[10px] font-semibold text-primary-deep"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const Label = ({ children }: { children: React.ReactNode }) => (
+  <div className="mb-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{children}</div>
+);
+
+const TextInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
+  <input
+    {...props}
+    className={`w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none ${
+      props.className ?? ""
+    }`}
+  />
+);
+
 const Profile = () => {
   const nav = useNavigate();
   const { user, signOut } = useAuth();
@@ -60,12 +117,16 @@ const Profile = () => {
   const [sessionMins, setSessionMins] = useState<number>(() =>
     parseInt(localStorage.getItem("lulutales_session_minutes") ?? "30", 10)
   );
+  const [editingKidId, setEditingKidId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Kid>>({});
 
   useEffect(() => {
     if (!user) return;
     supabase
       .from("child_profiles")
-      .select("id, name, age")
+      .select(
+        "id, name, age, gender, family_type, city, personality, home_type, family_members, family_address_terms"
+      )
       .eq("user_id", user.id)
       .order("created_at", { ascending: true })
       .then(({ data }) => setKids(data ?? []));
@@ -80,6 +141,57 @@ const Profile = () => {
     localStorage.setItem("lulutales_child_name", k.name);
     localStorage.setItem("lulutales_child_age", String(k.age));
     nav("/");
+  };
+
+  const startEdit = (k: Kid) => {
+    setEditingKidId(k.id);
+    setEditForm({ ...k });
+  };
+
+  const cancelEdit = () => {
+    setEditingKidId(null);
+    setEditForm({});
+  };
+
+  const saveKid = async (id: string) => {
+    const updateData = {
+      name: editForm.name?.trim() || "",
+      age: editForm.age || 0,
+      gender: editForm.gender || null,
+      family_type: editForm.family_type || null,
+      city: editForm.city?.trim() || null,
+      personality: editForm.personality?.trim() || null,
+      home_type: editForm.home_type?.trim() || null,
+      family_members: editForm.family_members?.trim() || null,
+      family_address_terms: editForm.family_address_terms?.trim() || null,
+    };
+
+    if (!updateData.name) {
+      toast.error("Name is required");
+      return;
+    }
+    if (!updateData.age || updateData.age < 2 || updateData.age > 14) {
+      toast.error("Age must be between 2 and 14");
+      return;
+    }
+
+    const { error } = await supabase.from("child_profiles").update(updateData).eq("id", id);
+
+    if (error) {
+      toast.error("Failed to save profile");
+      return;
+    }
+
+    setKids((prev) => prev.map((k) => (k.id === id ? { ...k, ...updateData } as Kid : k)));
+
+    if (id === activeId) {
+      localStorage.setItem("lulutales_child_name", updateData.name);
+      localStorage.setItem("lulutales_child_age", String(updateData.age));
+    }
+
+    setEditingKidId(null);
+    setEditForm({});
+    toast.success("Profile updated");
   };
 
   const handleSignOut = async () => {
@@ -150,27 +262,152 @@ const Profile = () => {
             <div className="space-y-2 bg-secondary/30 px-4 py-3">
               {kids.map((k) => {
                 const isActive = k.id === activeId;
+                const isEditing = editingKidId === k.id;
                 return (
-                  <button
+                  <div
                     key={k.id}
-                    onClick={() => switchTo(k)}
-                    className={`flex w-full items-center gap-3 rounded-2xl border bg-card p-3 text-left transition-colors ${
+                    className={`rounded-2xl border bg-card transition-colors ${
                       isActive ? "border-primary" : "border-border"
                     }`}
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-sm font-extrabold text-primary-foreground">
-                      {k.name.charAt(0).toUpperCase()}
+                    <div className="flex items-center gap-3 p-3">
+                      <button
+                        onClick={() => !isEditing && switchTo(k)}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-sm font-extrabold text-primary-foreground">
+                          {k.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-bold text-foreground">{k.name}</div>
+                          <div className="text-[11px] text-muted-foreground">{k.age} years</div>
+                        </div>
+                      </button>
+
+                      {!isEditing && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEdit(k);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-primary-deep hover:bg-primary/10"
+                          aria-label="Edit profile"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+
+                      {isActive && !isEditing && (
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-primary-deep">
+                          Active
+                        </span>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-bold text-foreground">{k.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{k.age} years</div>
-                    </div>
-                    {isActive && (
-                      <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-primary-deep">
-                        Active
-                      </span>
+
+                    {isEditing && (
+                      <div className="border-t border-border p-3 space-y-3">
+                        <div>
+                          <Label>Name</Label>
+                          <TextInput
+                            value={editForm.name ?? ""}
+                            onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                            placeholder="Child's name"
+                          />
+                        </div>
+                        <div>
+                          <Label>Age</Label>
+                          <TextInput
+                            type="number"
+                            min={2}
+                            max={14}
+                            value={editForm.age ?? ""}
+                            onChange={(e) => setEditForm((f) => ({ ...f, age: parseInt(e.target.value, 10) || 0 }))}
+                          />
+                        </div>
+                        <div>
+                          <Label>Gender</Label>
+                          <TextInput
+                            value={editForm.gender ?? ""}
+                            onChange={(e) => setEditForm((f) => ({ ...f, gender: e.target.value }))}
+                            placeholder="e.g. Girl, Boy"
+                          />
+                        </div>
+                        <div>
+                          <Label>Family setup</Label>
+                          <TextInput
+                            value={editForm.family_type ?? ""}
+                            onChange={(e) => setEditForm((f) => ({ ...f, family_type: e.target.value }))}
+                            placeholder="e.g. Single parent, Two parents"
+                          />
+                        </div>
+
+                        <div className="pt-1">
+                          <div className="mb-3 text-[10px] font-semibold uppercase tracking-wider text-primary-deep">
+                            About your child
+                          </div>
+                          <div className="space-y-3">
+                            <div>
+                              <Label>City</Label>
+                              <TextInput
+                                value={editForm.city ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, city: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Personality</Label>
+                              <TextInput
+                                value={editForm.personality ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, personality: e.target.value }))}
+                              />
+                            </div>
+                            <div>
+                              <Label>Home type</Label>
+                              <TextInput
+                                value={editForm.home_type ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, home_type: e.target.value }))}
+                                placeholder="e.g. apartment, independent house, society"
+                              />
+                            </div>
+                            <div>
+                              <Label>Family members</Label>
+                              <TextInput
+                                value={editForm.family_members ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, family_members: e.target.value }))}
+                                placeholder="e.g. Dadi, Papa, older sibling"
+                              />
+                            </div>
+                            <div>
+                              <div className="mb-1.5 flex items-center">
+                                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                  Family address terms
+                                </span>
+                                <InfoTooltip text="What the child calls each family member, e.g. Father: Papa, Mother: Mummy, Grandmother: Dadi" />
+                              </div>
+                              <TextInput
+                                value={editForm.family_address_terms ?? ""}
+                                onChange={(e) => setEditForm((f) => ({ ...f, family_address_terms: e.target.value }))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-2 pt-1">
+                          <button
+                            onClick={() => saveKid(k.id)}
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-full bg-gradient-primary py-2.5 text-xs font-bold text-primary-foreground shadow-glow"
+                          >
+                            <Check className="h-3.5 w-3.5" /> Save
+                          </button>
+                          <button
+                            onClick={cancelEdit}
+                            className="flex flex-1 items-center justify-center gap-1.5 rounded-full border border-border bg-card py-2.5 text-xs font-bold text-muted-foreground"
+                          >
+                            <X className="h-3.5 w-3.5" /> Cancel
+                          </button>
+                        </div>
+                      </div>
                     )}
-                  </button>
+                  </div>
                 );
               })}
               <button
