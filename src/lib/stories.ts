@@ -35,7 +35,7 @@ export const createPersonalisedStory = async (input: {
   age_group: string | null;
   child_profile_id: string;
   thumbnail?: string;
-  generation_params?: Record<string, unknown> | null;
+  generation_params?: Json | null;
 }): Promise<Story> => {
   const { data, error } = await supabase
     .from("stories")
