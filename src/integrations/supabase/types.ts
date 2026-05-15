@@ -106,6 +106,7 @@ export type Database = {
           child_profile_id: string | null
           created_at: string
           description: string | null
+          generation_params: Json | null
           id: string
           is_featured: boolean
           is_generated: boolean
@@ -121,6 +122,7 @@ export type Database = {
           child_profile_id?: string | null
           created_at?: string
           description?: string | null
+          generation_params?: Json | null
           id?: string
           is_featured?: boolean
           is_generated?: boolean
@@ -136,6 +138,7 @@ export type Database = {
           child_profile_id?: string | null
           created_at?: string
           description?: string | null
+          generation_params?: Json | null
           id?: string
           is_featured?: boolean
           is_generated?: boolean

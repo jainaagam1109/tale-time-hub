@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Tables } from "@/integrations/supabase/types";
+import type { Tables, Json } from "@/integrations/supabase/types";
 
 export type Story = Tables<"stories">;
 export type Episode = Tables<"episodes">;
@@ -35,6 +35,7 @@ export const createPersonalisedStory = async (input: {
   age_group: string | null;
   child_profile_id: string;
   thumbnail?: string;
+  generation_params?: Json | null;
 }): Promise<Story> => {
   const { data, error } = await supabase
     .from("stories")
