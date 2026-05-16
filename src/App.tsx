@@ -48,6 +48,7 @@ const App = () => (
             <Route path="/magic-hub" element={<RequireAuth><MagicHub /></RequireAuth>} />
             <Route path="/magic-hub/audio" element={<RequireAuth><AudioStoryForm /></RequireAuth>} />
             <Route path="/magic-hub/bedtime" element={<RequireAuth><BedtimeStoryForm /></RequireAuth>} />
+            <Route path="/generating/:storyId" element={<RequireAuth><Generating /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
