@@ -55,6 +55,18 @@ const Dashboard = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-5">
+        {pending && (
+          <button
+            onClick={() => nav(`/generating/${pending.id}`)}
+            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left shadow-soft"
+          >
+            <Loader2 className="h-4 w-4 animate-spin text-primary-deep" />
+            <div className="flex-1 text-xs font-semibold text-foreground">
+              A story is being created for {childName}
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
         <section>
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Ongoing story
