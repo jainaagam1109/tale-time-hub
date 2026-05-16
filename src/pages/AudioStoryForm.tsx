@@ -116,7 +116,7 @@ const AudioStoryForm = () => {
     }
     setSubmitting(true);
     try {
-      await createPersonalisedStory({
+      const created = await createPersonalisedStory({
         title: `${fields.name || "Your child"}'s ${theme.trim()} Story`,
         theme: theme.trim(),
         description: null,
@@ -131,7 +131,7 @@ const AudioStoryForm = () => {
         },
       });
       toast.success("Story request saved! We'll generate it shortly.");
-      nav("/dashboard");
+      nav(`/generating/${created.id}`);
     } catch (e: any) {
       toast.error(e?.message ?? "Could not save story");
     } finally {
