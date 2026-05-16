@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Play, Sparkles, BarChart3, ChevronRight } from "lucide-react";
+import { Play, Sparkles, BarChart3, ChevronRight, Loader2 } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
 import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 import { fetchStoriesForProfile } from "@/lib/stories";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const nav = useNavigate();
