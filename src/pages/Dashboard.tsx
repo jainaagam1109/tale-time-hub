@@ -17,6 +17,23 @@ const Dashboard = () => {
     enabled: !!profileId,
   });
 
+  const { data: pendingStories = [] } = useQuery({
+    queryKey: ["pending-stories", profileId],
+    queryFn: async () => {
+      if (!profileId) return [];
+      const { data } = await supabase
+        .from("stories")
+        .select("id")
+        .eq("child_profile_id", profileId)
+        .eq("is_generated", false)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!profileId,
+    refetchInterval: 30000,
+  });
+  const pending = pendingStories[0];
+
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
   const ongoing = stories.find((s) => s.id === lastId) ?? stories[0];
 
