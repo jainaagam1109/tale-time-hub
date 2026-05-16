@@ -1,10 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Play, Sparkles, BarChart3, ChevronRight } from "lucide-react";
+import { Play, Sparkles, BarChart3, ChevronRight, Loader2 } from "lucide-react";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
 import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 import { fetchStoriesForProfile } from "@/lib/stories";
+import { supabase } from "@/integrations/supabase/client";
 
 const Dashboard = () => {
   const nav = useNavigate();
@@ -15,6 +16,23 @@ const Dashboard = () => {
     queryFn: () => (profileId ? fetchStoriesForProfile(profileId) : Promise.resolve([])),
     enabled: !!profileId,
   });
+
+  const { data: pendingStories = [] } = useQuery({
+    queryKey: ["pending-stories", profileId],
+    queryFn: async () => {
+      if (!profileId) return [];
+      const { data } = await supabase
+        .from("stories")
+        .select("id")
+        .eq("child_profile_id", profileId)
+        .eq("is_generated", false)
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!profileId,
+    refetchInterval: 30000,
+  });
+  const pending = pendingStories[0];
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
   const ongoing = stories.find((s) => s.id === lastId) ?? stories[0];
@@ -37,6 +55,18 @@ const Dashboard = () => {
       </header>
 
       <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-5">
+        {pending && (
+          <button
+            onClick={() => nav(`/generating/${pending.id}`)}
+            className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-left shadow-soft"
+          >
+            <Loader2 className="h-4 w-4 animate-spin text-primary-deep" />
+            <div className="flex-1 text-xs font-semibold text-foreground">
+              A story is being created for {childName}
+            </div>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          </button>
+        )}
         <section>
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Ongoing story

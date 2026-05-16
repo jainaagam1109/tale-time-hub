@@ -19,6 +19,7 @@ import Insights from "./pages/Insights";
 import MagicHub from "./pages/MagicHub";
 import AudioStoryForm from "./pages/AudioStoryForm";
 import BedtimeStoryForm from "./pages/BedtimeStoryForm";
+import Generating from "./pages/Generating";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/magic-hub" element={<RequireAuth><MagicHub /></RequireAuth>} />
             <Route path="/magic-hub/audio" element={<RequireAuth><AudioStoryForm /></RequireAuth>} />
             <Route path="/magic-hub/bedtime" element={<RequireAuth><BedtimeStoryForm /></RequireAuth>} />
+            <Route path="/generating/:storyId" element={<RequireAuth><Generating /></RequireAuth>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
