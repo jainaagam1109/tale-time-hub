@@ -1,0 +1,78 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Loader2, Sparkles } from "lucide-react";
+import { toast } from "sonner";
+import { PhoneShell } from "@/components/PhoneShell";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+
+const Generating = () => {
+  const { storyId } = useParams<{ storyId: string }>();
+  const nav = useNavigate();
+  const [story, setStory] = useState<Tables<"stories"> | null>(null);
+  const [childName, setChildName] = useState<string>(
+    typeof window !== "undefined" ? localStorage.getItem("lulutales_child_name") ?? "your child" : "your child"
+  );
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (!storyId) return;
+    let cancelled = false;
+
+    const fetchStory = async () => {
+      const { data } = await supabase.from("stories").select("*").eq("id", storyId).maybeSingle();
+      if (cancelled || !data) return;
+      setStory(data);
+
+      if (data.child_profile_id) {
+        const { data: kid } = await supabase
+          .from("child_profiles")
+          .select("name")
+          .eq("id", data.child_profile_id)
+          .maybeSingle();
+        if (!cancelled && kid?.name) setChildName(kid.name);
+      }
+
+      if (data.is_generated && !doneRef.current) {
+        doneRef.current = true;
+        toast.success("Your story is ready!");
+        setTimeout(() => nav(`/story/${storyId}`), 1500);
+      }
+    };
+
+    fetchStory();
+    const id = setInterval(fetchStory, 30000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [storyId, nav]);
+
+  return (
+    <PhoneShell>
+      <main className="flex flex-1 flex-col items-center justify-center px-6 pb-10 pt-10 text-center">
+        <div className="relative mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-primary shadow-glow">
+          <Sparkles className="h-12 w-12 text-primary-foreground" />
+          <Loader2 className="absolute inset-0 m-auto h-32 w-32 animate-spin text-primary-foreground/40" />
+        </div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-deep">
+          Creating magic
+        </div>
+        <h1 className="mt-2 text-xl font-extrabold text-foreground">
+          {story?.title ?? "Your story"}
+        </h1>
+        <p className="mt-4 max-w-xs text-sm text-muted-foreground">
+          We're crafting {childName}'s story. This usually takes a few minutes.
+        </p>
+        <button
+          onClick={() => nav("/")}
+          className="mt-8 rounded-full border border-border bg-card px-5 py-2 text-xs font-semibold text-primary-deep"
+        >
+          Back to home
+        </button>
+      </main>
+    </PhoneShell>
+  );
+};
+
+export default Generating;
