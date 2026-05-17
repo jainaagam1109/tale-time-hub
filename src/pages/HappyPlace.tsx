@@ -1,35 +1,94 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { Search } from "lucide-react";
-import { fetchStories, fetchStoriesForProfile, fetchSavedStories } from "@/lib/stories";
+import { fetchStories, fetchStoriesForProfile, type Story } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 import { BottomNav } from "@/components/BottomNav";
-import { StoryCard } from "@/components/StoryCard";
-import { StoryCardSkeleton } from "@/components/StoryCardSkeleton";
 import { SectionHeader } from "@/components/SectionHeader";
 import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
+import { TagChip } from "@/components/TagChip";
+
+type CardVisual = "sparkle" | "moon" | "headphones";
+
+const visualFor = (v: CardVisual) =>
+  v === "sparkle" ? "✨" : v === "moon" ? "🌙" : "🎧";
+
+const StoryRowCard = ({
+  story,
+  visual,
+  to,
+}: {
+  story: Story;
+  visual: CardVisual;
+  to: string;
+}) => (
+  <Link
+    to={to}
+    className="flex w-44 flex-shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 shadow-soft transition-colors hover:border-primary/40"
+  >
+    <div className="flex h-20 items-center justify-center rounded-xl bg-gradient-card text-4xl">
+      {visualFor(visual)}
+    </div>
+    {story.theme && <TagChip label={story.theme} />}
+    <div className="line-clamp-2 text-xs font-bold leading-snug text-foreground">
+      {story.title}
+    </div>
+  </Link>
+);
+
+const EmptyCard = () => (
+  <div className="ml-5 flex h-32 w-44 flex-shrink-0 items-center justify-center rounded-2xl border border-dashed border-border bg-card/60 text-center text-[11px] font-semibold text-muted-foreground">
+    Coming soon
+  </div>
+);
+
+const Row = ({
+  stories,
+  visual,
+  linkFor,
+}: {
+  stories: Story[];
+  visual: CardVisual;
+  linkFor: (s: Story) => string;
+}) => {
+  if (stories.length === 0) return <EmptyCard />;
+  return (
+    <div className="-mx-5 flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide">
+      {stories.map((s) => (
+        <StoryRowCard key={s.id} story={s} visual={visual} to={linkFor(s)} />
+      ))}
+    </div>
+  );
+};
 
 const HappyPlace = () => {
   const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
   const childName = localStorage.getItem("lulutales_child_name") ?? "friend";
 
-  const { data: allStories = [], isLoading } = useQuery({ queryKey: ["stories"], queryFn: fetchStories });
-  const { data: personalised = [] } = useQuery({
+  const { data: allStories = [] } = useQuery({ queryKey: ["stories"], queryFn: fetchStories });
+  const { data: profileStories = [] } = useQuery({
     queryKey: ["stories-for-profile", profileId],
     queryFn: () => (profileId ? fetchStoriesForProfile(profileId) : Promise.resolve([])),
     enabled: !!profileId,
   });
-  const { data: saved = [] } = useQuery({ queryKey: ["library"], queryFn: fetchSavedStories });
 
   const [query, setQuery] = useState("");
-  const personalisedIds = useMemo(() => new Set(personalised.map((s) => s.id)), [personalised]);
-
   const matches = (s: { title: string }) =>
     !query || s.title.toLowerCase().includes(query.toLowerCase());
 
-  const personalisedFiltered = personalised.filter(matches);
-  const globalStories = allStories.filter((s) => !personalisedIds.has(s.id)).filter(matches);
-  const savedFiltered = saved.filter(matches);
+  const personalised = useMemo(
+    () => profileStories.filter((s) => s.is_generated && s.story_type === "personalised_audio").filter(matches),
+    [profileStories, query]
+  );
+  const bedtime = useMemo(
+    () => profileStories.filter((s) => s.is_generated && s.story_type === "bedtime_text").filter(matches),
+    [profileStories, query]
+  );
+  const storyRoom = useMemo(
+    () => allStories.filter((s) => s.is_generated && s.story_type === "regular_audio").filter(matches),
+    [allStories, query]
+  );
 
   return (
     <PhoneShell>
@@ -53,51 +112,21 @@ const HappyPlace = () => {
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-6">
-        {isLoading && (
-          <div className="grid grid-cols-2 gap-3 px-5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <StoryCardSkeleton key={i} />
-            ))}
-          </div>
-        )}
+      <main className="flex-1 overflow-y-auto pb-6 space-y-6">
+        <section>
+          <SectionHeader title={`Curated for ${childName}`} />
+          <Row stories={personalised} visual="sparkle" linkFor={(s) => `/story/${s.id}`} />
+        </section>
 
-        {!isLoading && personalisedFiltered.length > 0 && (
-          <section className="pb-5">
-            <SectionHeader title="Personalised for you" />
-            <div className="grid grid-cols-2 gap-3 px-5">
-              {personalisedFiltered.map((s) => (
-                <StoryCard key={s.id} story={s} />
-              ))}
-            </div>
-          </section>
-        )}
+        <section>
+          <SectionHeader title="Bedtime Stories" />
+          <Row stories={bedtime} visual="moon" linkFor={(s) => `/bedtime/${s.id}`} />
+        </section>
 
-        {!isLoading && (
-          <section className="pb-5">
-            <SectionHeader title="All stories" />
-            {globalStories.length === 0 ? (
-              <p className="px-5 text-xs text-muted-foreground">No stories yet.</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 px-5">
-                {globalStories.map((s) => (
-                  <StoryCard key={s.id} story={s} />
-                ))}
-              </div>
-            )}
-          </section>
-        )}
-
-        {!isLoading && savedFiltered.length > 0 && (
-          <section className="pb-5">
-            <SectionHeader title="Saved" />
-            <div className="grid grid-cols-2 gap-3 px-5">
-              {savedFiltered.map((s) => (
-                <StoryCard key={s.id} story={s} />
-              ))}
-            </div>
-          </section>
-        )}
+        <section>
+          <SectionHeader title="Story Room" />
+          <Row stories={storyRoom} visual="headphones" linkFor={(s) => `/story/${s.id}`} />
+        </section>
       </main>
 
       <BottomNav />
