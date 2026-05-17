@@ -37,7 +37,8 @@ const Dashboard = () => {
   const pending = pendingStories[0];
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
-  const ongoing = stories.find((s) => s.id === lastId) ?? stories[0];
+  const generatedStories = stories.filter((s) => s.is_generated);
+  const ongoing = generatedStories.find((s) => s.id === lastId) ?? generatedStories[0];
 
   const streak = [true, true, true, true, true, false, false];
   const badges = [
