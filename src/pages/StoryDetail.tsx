@@ -43,8 +43,6 @@ const StoryDetail = () => {
         {story.theme && <TagChip label={story.theme} />}
         <h1 className="mt-2 text-2xl font-extrabold text-foreground">{story.title}</h1>
         <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-          <span>{story.age_group ?? "All ages"}</span>
-          <span>·</span>
           <Mic className="h-3 w-3" />
           <span>Narrated by Luna</span>
         </div>

@@ -1,0 +1,1 @@
+ALTER TABLE public.stories ADD COLUMN story_text text;

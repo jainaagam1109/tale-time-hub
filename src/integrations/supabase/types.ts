@@ -111,6 +111,7 @@ export type Database = {
           is_featured: boolean
           is_generated: boolean
           owner_profile_id: string | null
+          story_text: string | null
           story_type: string | null
           theme: string | null
           thumbnail: string | null
@@ -127,6 +128,7 @@ export type Database = {
           is_featured?: boolean
           is_generated?: boolean
           owner_profile_id?: string | null
+          story_text?: string | null
           story_type?: string | null
           theme?: string | null
           thumbnail?: string | null
@@ -143,6 +145,7 @@ export type Database = {
           is_featured?: boolean
           is_generated?: boolean
           owner_profile_id?: string | null
+          story_text?: string | null
           story_type?: string | null
           theme?: string | null
           thumbnail?: string | null
