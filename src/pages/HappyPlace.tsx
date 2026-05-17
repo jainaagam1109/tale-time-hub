@@ -86,7 +86,7 @@ const HappyPlace = () => {
     [profileStories, query]
   );
   const storyRoom = useMemo(
-    () => allStories.filter((s) => s.is_generated && s.story_type === "regular_audio").filter(matches),
+    () => allStories.filter((s) => s.is_generated && s.story_type === "pre_recorded").filter(matches),
     [allStories, query]
   );
 
