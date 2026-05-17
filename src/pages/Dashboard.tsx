@@ -21,11 +21,13 @@ const Dashboard = () => {
     queryKey: ["pending-stories", profileId],
     queryFn: async () => {
       if (!profileId) return [];
+      const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { data } = await supabase
         .from("stories")
         .select("id")
         .eq("child_profile_id", profileId)
         .eq("is_generated", false)
+        .gte("created_at", tenMinAgo)
         .order("created_at", { ascending: false });
       return data ?? [];
     },

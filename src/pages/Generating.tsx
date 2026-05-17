@@ -6,10 +6,13 @@ import { PhoneShell } from "@/components/PhoneShell";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
+const MAX_WAIT_MS = 10 * 60 * 1000;
+
 const Generating = () => {
   const { storyId } = useParams<{ storyId: string }>();
   const nav = useNavigate();
   const [story, setStory] = useState<Tables<"stories"> | null>(null);
+  const [stalled, setStalled] = useState(false);
   const [childName, setChildName] = useState<string>(
     typeof window !== "undefined" ? localStorage.getItem("lulutales_child_name") ?? "your child" : "your child"
   );
@@ -37,6 +40,12 @@ const Generating = () => {
         doneRef.current = true;
         toast.success("Your story is ready!");
         setTimeout(() => nav(`/story/${storyId}`), 1500);
+        return;
+      }
+
+      const ageMs = Date.now() - new Date(data.created_at).getTime();
+      if (!data.is_generated && ageMs > MAX_WAIT_MS) {
+        setStalled(true);
       }
     };
 
@@ -53,16 +62,20 @@ const Generating = () => {
       <main className="flex flex-1 flex-col items-center justify-center px-6 pb-10 pt-10 text-center">
         <div className="relative mb-8 flex h-32 w-32 items-center justify-center rounded-full bg-gradient-primary shadow-glow">
           <Sparkles className="h-12 w-12 text-primary-foreground" />
-          <Loader2 className="absolute inset-0 m-auto h-32 w-32 animate-spin text-primary-foreground/40" />
+          {!stalled && (
+            <Loader2 className="absolute inset-0 m-auto h-32 w-32 animate-spin text-primary-foreground/40" />
+          )}
         </div>
         <div className="text-[10px] font-semibold uppercase tracking-wider text-primary-deep">
-          Creating magic
+          {stalled ? "Still working" : "Creating magic"}
         </div>
         <h1 className="mt-2 text-xl font-extrabold text-foreground">
           {story?.title ?? "Your story"}
         </h1>
         <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-          We're crafting {childName}'s story. This usually takes a few minutes.
+          {stalled
+            ? `This is taking longer than expected. We'll notify you when ${childName}'s story is ready.`
+            : `We're crafting ${childName}'s story. This usually takes a few minutes.`}
         </p>
         <button
           onClick={() => nav("/")}
