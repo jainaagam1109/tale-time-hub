@@ -1,31 +1,29 @@
-## Goal
-Stop the home screen from looking like a story is still “in progress” after generation is complete.
+## Why "Tara and the quiet house" is missing
 
-## What I found
-The item in your screenshot is the **Ongoing story** card, not the small pending-generation banner.
+The row exists in the `stories` table, but it has:
+- `is_generated = false`
+- `story_type = 'pre_recorded'`
+- `owner_profile_id = null` (global catalogue story)
 
-Right now the dashboard:
-- fetches **all** stories for the active child profile
-- picks `lastId` or `stories[0]` for the Ongoing story card
-- renders a hardcoded `25% complete`
+The Story Room section in `src/pages/HappyPlace.tsx` filters with:
+```ts
+s.is_generated === true && s.story_type === 'regular_audio'
+```
 
-So even if the pending banner logic is correct, the Ongoing story card can still make the home screen look like generation is still happening.
+Tara fails both checks, so it's hidden. The filter was written for newly-generated personalised audio, but the Story Room is meant to display the pre-recorded catalogue.
 
-## Plan
-1. Update the dashboard’s ongoing-story selection logic so it only uses stories that are actually ready to consume (`is_generated = true`).
-2. Keep the pending-generation banner separate and only driven by unfinished stories.
-3. Make the Ongoing story card fall back cleanly when there is no generated story yet, instead of showing a misleading item.
-4. Verify the home screen behavior against current story data so completed stories show as playable and unfinished ones only appear in the generating flow/banner.
+## Fix
 
-## Technical details
-- File to update: `src/pages/Dashboard.tsx`
-- Likely change:
-  - derive `generatedStories = stories.filter((s) => s.is_generated)`
-  - compute `ongoing` from `generatedStories` instead of all `stories`
-  - preserve the existing top pending banner query for `is_generated = false`
-- No backend or schema changes needed for this fix.
+Update the Story Room filter in `src/pages/HappyPlace.tsx` to match catalogue stories instead:
 
-## Expected result
-- If a story is still being created: user sees only the pending banner.
-- If a story is generated: user sees it as the ongoing/playable story.
-- The dashboard no longer mixes “pending creation” and “ongoing playback” states.
+```ts
+const storyRoom = allStories
+  .filter((s) => s.story_type === 'pre_recorded' && s.owner_profile_id === null)
+  .filter(matches);
+```
+
+- Drops the `is_generated` requirement (catalogue stories are authored, not generated).
+- Switches `story_type` to `'pre_recorded'`, which is the default in the DB.
+- Restricts to global rows (`owner_profile_id IS NULL`) so a user's own generated audio doesn't leak into the shared Story Room.
+
+No DB migration, no other screens touched.
