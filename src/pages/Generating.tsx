@@ -39,7 +39,8 @@ const Generating = () => {
       if (data.is_generated && !doneRef.current) {
         doneRef.current = true;
         toast.success("Your story is ready!");
-        setTimeout(() => nav(`/story/${storyId}`), 1500);
+        const dest = data.story_type === "bedtime_text" ? `/bedtime/${storyId}` : `/story/${storyId}`;
+        setTimeout(() => nav(dest), 1500);
         return;
       }
 
