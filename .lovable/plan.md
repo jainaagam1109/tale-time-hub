@@ -1,29 +1,21 @@
-## Why "Tara and the quiet house" is missing
+## Problem
 
-The row exists in the `stories` table, but it has:
-- `is_generated = false`
-- `story_type = 'pre_recorded'`
-- `owner_profile_id = null` (global catalogue story)
+Story `c2f515ab-3a82-4641-ac2e-0c79ea62de01` ("BT test2…") has `story_type = 'bedtime_text'` and a populated `story_text`, but tapping it opens `/story/:id` (the audio Story Detail screen) instead of the Bedtime Reader.
 
-The Story Room section in `src/pages/HappyPlace.tsx` filters with:
-```ts
-s.is_generated === true && s.story_type === 'regular_audio'
-```
-
-Tara fails both checks, so it's hidden. The filter was written for newly-generated personalised audio, but the Story Room is meant to display the pre-recorded catalogue.
+Root cause: `src/components/StoryCard.tsx` hardcodes `to={`/story/${story.id}`}` for both `grid` and `row` variants. Any list that uses `StoryCard` (Library, Dashboard, search) sends bedtime stories to the wrong screen. Only `HappyPlace`'s bedtime row works because it builds its own link with `linkFor={(s) => `/bedtime/${s.id}`}`.
 
 ## Fix
 
-Update the Story Room filter in `src/pages/HappyPlace.tsx` to match catalogue stories instead:
+1. **`src/components/StoryCard.tsx`** — compute the target route from `story.story_type`:
+   ```ts
+   const to = story.story_type === "bedtime_text"
+     ? `/bedtime/${story.id}`
+     : `/story/${story.id}`;
+   ```
+   Use it in both `row` and `grid` variants.
 
-```ts
-const storyRoom = allStories
-  .filter((s) => s.story_type === 'pre_recorded' && s.owner_profile_id === null)
-  .filter(matches);
-```
+2. **`src/pages/StoryDetail.tsx`** — defensive guard: if a user lands on `/story/:id` for a `bedtime_text` story (old links, mini-player, deep links), redirect to `/bedtime/:id` via `navigate(..., { replace: true })` once the story loads.
 
-- Drops the `is_generated` requirement (catalogue stories are authored, not generated).
-- Switches `story_type` to `'pre_recorded'`, which is the default in the DB.
-- Restricts to global rows (`owner_profile_id IS NULL`) so a user's own generated audio doesn't leak into the shared Story Room.
+3. **`src/components/MiniPlayer.tsx`** (optional, small) — skip rendering when the last story is `bedtime_text`, since the audio player isn't applicable. Cheap safety net.
 
-No DB migration, no other screens touched.
+No DB changes, no other screens touched.
