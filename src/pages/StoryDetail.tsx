@@ -65,10 +65,20 @@ const StoryDetail = () => {
 
         <div className="mt-5 flex gap-2">
           <button
-            onClick={() => nav(`/player/${story.id}`)}
+            onClick={() =>
+              nav(story.story_type === "bedtime_text" ? `/bedtime/${story.id}` : `/player/${story.id}`)
+            }
             className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-primary py-3 text-sm font-bold text-primary-foreground shadow-glow"
           >
-            <Play className="h-4 w-4 fill-current" /> Play story
+            {story.story_type === "bedtime_text" ? (
+              <>
+                <BookOpen className="h-4 w-4" /> Read story
+              </>
+            ) : (
+              <>
+                <Play className="h-4 w-4 fill-current" /> Play story
+              </>
+            )}
           </button>
           <button
             onClick={onToggleSave}
@@ -79,27 +89,31 @@ const StoryDetail = () => {
           </button>
         </div>
 
-        <h2 className="mt-7 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Episodes
-        </h2>
-        <div className="rounded-2xl border border-border bg-card">
-          {episodes.length === 0 && (
-            <div className="px-4 py-3 text-sm text-muted-foreground">No episodes yet.</div>
-          )}
-          {episodes.map((ep) => (
-            <button
-              key={ep.id}
-              onClick={() => nav(`/player/${story.id}/${ep.episode_number}`)}
-              className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0"
-            >
-              <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">
-                {ep.episode_number}
-              </div>
-              <div className="flex-1 text-sm font-semibold text-foreground">{ep.title}</div>
-              <Play className="h-4 w-4 fill-current text-primary-deep" />
-            </button>
-          ))}
-        </div>
+        {story.story_type !== "bedtime_text" && (
+          <>
+            <h2 className="mt-7 mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              Episodes
+            </h2>
+            <div className="rounded-2xl border border-border bg-card">
+              {episodes.length === 0 && (
+                <div className="px-4 py-3 text-sm text-muted-foreground">No episodes yet.</div>
+              )}
+              {episodes.map((ep) => (
+                <button
+                  key={ep.id}
+                  onClick={() => nav(`/player/${story.id}/${ep.episode_number}`)}
+                  className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0"
+                >
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border text-xs text-muted-foreground">
+                    {ep.episode_number}
+                  </div>
+                  <div className="flex-1 text-sm font-semibold text-foreground">{ep.title}</div>
+                  <Play className="h-4 w-4 fill-current text-primary-deep" />
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </PhoneShell>
   );
