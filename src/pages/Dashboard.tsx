@@ -37,7 +37,9 @@ const Dashboard = () => {
   const pending = pendingStories[0];
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
-  const generatedStories = stories.filter((s) => s.is_generated);
+  const generatedStories = stories.filter(
+    (s) => s.is_generated && (s.story_type === "personalised_audio" || s.story_type === "pre_recorded")
+  );
   const ongoing = generatedStories.find((s) => s.id === lastId) ?? generatedStories[0];
 
   const streak = [true, true, true, true, true, false, false];
