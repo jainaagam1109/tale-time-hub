@@ -121,6 +121,7 @@ const Admin = () => {
           age_group: ageGroup.trim() || null,
           description: summary.trim() || null,
           is_featured: isFeatured,
+          is_generated: true,
         })
         .select()
         .single();
