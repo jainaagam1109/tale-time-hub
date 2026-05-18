@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft, Play, Bookmark, BookmarkCheck, Mic } from "lucide-react";
+import { ChevronLeft, Play, Bookmark, BookmarkCheck, Mic, BookOpen } from "lucide-react";
 import { fetchEpisodes, fetchStory, fetchStoryTags, isSaved, toggleSaved } from "@/lib/stories";
 import { PhoneShell } from "@/components/PhoneShell";
 import { TagChip } from "@/components/TagChip";
