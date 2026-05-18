@@ -19,6 +19,12 @@ const StoryDetail = () => {
     if (id) isSaved(id).then(setSaved);
   }, [id]);
 
+  useEffect(() => {
+    if (story?.story_type === "bedtime_text") {
+      nav(`/bedtime/${story.id}`, { replace: true });
+    }
+  }, [story, nav]);
+
   const onToggleSave = async () => {
     const next = await toggleSaved(id);
     setSaved(next);
