@@ -22,6 +22,7 @@ export const MiniPlayer = () => {
   }, [location.pathname]);
 
   if (!story) return null;
+  if (story.story_type === "bedtime_text") return null;
   if (location.pathname.startsWith("/player/")) return null;
 
   return (
