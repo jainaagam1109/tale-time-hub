@@ -1,0 +1,1 @@
+ALTER TABLE public.stories DROP COLUMN IF EXISTS type;

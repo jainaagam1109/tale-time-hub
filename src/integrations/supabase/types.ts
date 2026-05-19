@@ -116,7 +116,6 @@ export type Database = {
           theme: string | null
           thumbnail: string | null
           title: string
-          type: string
         }
         Insert: {
           age_group?: string | null
@@ -133,7 +132,6 @@ export type Database = {
           theme?: string | null
           thumbnail?: string | null
           title: string
-          type?: string
         }
         Update: {
           age_group?: string | null
@@ -150,7 +148,6 @@ export type Database = {
           theme?: string | null
           thumbnail?: string | null
           title?: string
-          type?: string
         }
         Relationships: [
           {
