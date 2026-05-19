@@ -1,28 +1,61 @@
 ## Problem
 
-After a story finishes generating, `Generating.tsx` calls `nav(dest)` which **pushes** a new history entry. The Generating page remains in the back stack, so pressing Back returns the user to the "Creating magic…" screen for a story that's already done. From there, the polling effect sees `is_generated = true` and re-redirects forward — trapping the user in a loop or showing a confusing stale loader.
+In `src/pages/Player.tsx`, the progress bar is purely presentational:
 
-## Fix
-
-Single-file change in **`src/pages/Generating.tsx`**: use `navigate(dest, { replace: true })` instead of a plain push when the story is ready.
-
-```ts
-setTimeout(() => nav(dest, { replace: true }), 1500);
+```tsx
+<div className="relative h-1.5 rounded-full bg-secondary">
+  <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${pct}%` }} />
+</div>
 ```
 
-This removes `/generating/:storyId` from the history stack at the moment of redirect. Back from the story page will then go to whatever the user was on before generation started (typically `/magic-hub/...` form or `/` Happy Place), which is the expected behavior.
+No click/drag handler, no `<input type="range">`, no ref — so taps do nothing. The image's red "scrubber dot" is also illusory; there is no thumb element rendered. Only the ±10s buttons can change `currentTime`.
 
-### Why replace (not a forced `/happy-place` redirect)
+## Fix (single file: `src/pages/Player.tsx`)
 
-- Preserves natural back navigation to the screen the user actually came from.
-- Matches the pattern already used for the bedtime redirect in `StoryDetail.tsx`.
-- No router config or new routes needed.
+Replace the static bar with a native `<input type="range">` styled as the progress track. This gives us click-to-seek, drag-to-scrub, and keyboard accessibility for free, and works reliably on mobile (touch) without custom gesture code.
 
-### Optional safety net (only if needed)
+Approach:
 
-If we ever want a hard guarantee that nobody lands on `/generating/:storyId` for a finished story (e.g. via a bookmarked link), add an early check in `Generating.tsx`'s first fetch: if `data.is_generated` is already true on initial load, skip the 1.5s delay and `replace` immediately. This is a tiny tweak to the same block and avoids the 1.5s "Creating magic" flash.
+1. Add a seek handler:
+   ```ts
+   const onSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+     const a = audioRef.current;
+     if (!a || !isFinite(a.duration)) return;
+     const next = Number(e.target.value);
+     a.currentTime = next;
+     setT(next);
+   };
+   ```
+2. Render:
+   ```tsx
+   <input
+     type="range"
+     min={0}
+     max={dur || 0}
+     step={0.1}
+     value={t}
+     onChange={onSeek}
+     disabled={!audioUrl || !dur}
+     className="w-full ..."  // styled track + thumb using design tokens
+     style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--secondary)) ${pct}%)` }}
+   />
+   ```
+   Keep the `0:06 / 1:48` time row underneath unchanged.
+
+3. Style the range with Tailwind + a small `@layer` rule in `src/index.css` for `::-webkit-slider-thumb` / `::-moz-range-thumb` (a circular thumb using `--primary`) so it visually matches the mockup. Track height stays `h-1.5`.
+
+### Why a native range instead of custom mouse handlers
+
+- Touch support on mobile (the player is in a 390px phone shell) without writing pointer/touch logic.
+- Free keyboard a11y (arrow keys).
+- Less code, no `getBoundingClientRect` math, no edge cases when `duration` is `NaN`.
+
+### Guards
+
+- Disable the input until metadata loads (`!dur`) so users can't seek a 0-length track.
+- Clamp via `min`/`max`; the existing `onTime` listener will continue to update `t` during playback.
 
 ## Out of scope
 
-- No changes to `StoryDetail`, `BedtimeReader`, `HappyPlace`, or routing config.
-- No DB or business-logic changes.
+- No changes to skip buttons, episode autoplay, or persistence logic.
+- No changes to BedtimeReader or MiniPlayer.
