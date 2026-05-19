@@ -151,14 +151,32 @@ const Player = () => {
         </div>
 
         <div className="mt-8">
-          <div className="relative h-1.5 rounded-full bg-secondary">
-            <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${pct}%` }} />
-          </div>
+          <input
+            type="range"
+            min={0}
+            max={dur || 0}
+            step={0.1}
+            value={t}
+            onChange={(e) => {
+              const a = audioRef.current;
+              if (!a || !isFinite(a.duration)) return;
+              const next = Number(e.target.value);
+              a.currentTime = next;
+              setT(next);
+            }}
+            disabled={!audioUrl || !dur}
+            className="seek-range"
+            style={{
+              background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--secondary)) ${pct}%)`,
+            }}
+            aria-label="Seek"
+          />
           <div className="mt-2 flex justify-between text-[10px] text-muted-foreground">
             <span>{fmt(t)}</span>
             <span>{fmt(dur)}</span>
           </div>
         </div>
+
 
         <div className="mt-6 flex items-center justify-center gap-4">
           <button
