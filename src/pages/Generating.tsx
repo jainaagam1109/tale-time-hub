@@ -40,7 +40,7 @@ const Generating = () => {
         doneRef.current = true;
         toast.success("Your story is ready!");
         const dest = data.story_type === "bedtime_text" ? `/bedtime/${storyId}` : `/story/${storyId}`;
-        setTimeout(() => nav(dest), 1500);
+        setTimeout(() => nav(dest, { replace: true }), 1500);
         return;
       }
 
