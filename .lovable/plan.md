@@ -1,21 +1,28 @@
 ## Problem
 
-Story `c2f515ab-3a82-4641-ac2e-0c79ea62de01` ("BT test2…") has `story_type = 'bedtime_text'` and a populated `story_text`, but tapping it opens `/story/:id` (the audio Story Detail screen) instead of the Bedtime Reader.
-
-Root cause: `src/components/StoryCard.tsx` hardcodes `to={`/story/${story.id}`}` for both `grid` and `row` variants. Any list that uses `StoryCard` (Library, Dashboard, search) sends bedtime stories to the wrong screen. Only `HappyPlace`'s bedtime row works because it builds its own link with `linkFor={(s) => `/bedtime/${s.id}`}`.
+After a story finishes generating, `Generating.tsx` calls `nav(dest)` which **pushes** a new history entry. The Generating page remains in the back stack, so pressing Back returns the user to the "Creating magic…" screen for a story that's already done. From there, the polling effect sees `is_generated = true` and re-redirects forward — trapping the user in a loop or showing a confusing stale loader.
 
 ## Fix
 
-1. **`src/components/StoryCard.tsx`** — compute the target route from `story.story_type`:
-   ```ts
-   const to = story.story_type === "bedtime_text"
-     ? `/bedtime/${story.id}`
-     : `/story/${story.id}`;
-   ```
-   Use it in both `row` and `grid` variants.
+Single-file change in **`src/pages/Generating.tsx`**: use `navigate(dest, { replace: true })` instead of a plain push when the story is ready.
 
-2. **`src/pages/StoryDetail.tsx`** — defensive guard: if a user lands on `/story/:id` for a `bedtime_text` story (old links, mini-player, deep links), redirect to `/bedtime/:id` via `navigate(..., { replace: true })` once the story loads.
+```ts
+setTimeout(() => nav(dest, { replace: true }), 1500);
+```
 
-3. **`src/components/MiniPlayer.tsx`** (optional, small) — skip rendering when the last story is `bedtime_text`, since the audio player isn't applicable. Cheap safety net.
+This removes `/generating/:storyId` from the history stack at the moment of redirect. Back from the story page will then go to whatever the user was on before generation started (typically `/magic-hub/...` form or `/` Happy Place), which is the expected behavior.
 
-No DB changes, no other screens touched.
+### Why replace (not a forced `/happy-place` redirect)
+
+- Preserves natural back navigation to the screen the user actually came from.
+- Matches the pattern already used for the bedtime redirect in `StoryDetail.tsx`.
+- No router config or new routes needed.
+
+### Optional safety net (only if needed)
+
+If we ever want a hard guarantee that nobody lands on `/generating/:storyId` for a finished story (e.g. via a bookmarked link), add an early check in `Generating.tsx`'s first fetch: if `data.is_generated` is already true on initial load, skip the 1.5s delay and `replace` immediately. This is a tiny tweak to the same block and avoids the 1.5s "Creating magic" flash.
+
+## Out of scope
+
+- No changes to `StoryDetail`, `BedtimeReader`, `HappyPlace`, or routing config.
+- No DB or business-logic changes.
