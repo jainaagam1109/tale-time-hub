@@ -5,46 +5,73 @@ import { supabase } from "@/integrations/supabase/client";
 import { PhoneShell } from "@/components/PhoneShell";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  FieldLabel,
+  TextInput,
+  Select,
+  isLettersOnly,
+  isNumeric,
+  ValidationState,
+} from "@/components/StoryFormFields";
 
-const ages = [4, 5, 6, 7];
-const genders = ["Girl", "Boy", "Prefer not to say"];
-const families = ["Single parent", "Two parents", "Joint family", "Grandparents"];
+const GENDERS = [
+  { label: "Girl", value: "Girl" },
+  { label: "Boy", value: "Boy" },
+  { label: "Prefer not to say", value: "Prefer not to say" },
+];
+
+const FAMILY_SETUPS = [
+  { label: "Nuclear family", value: "Nuclear family" },
+  { label: "Single parent", value: "Single parent" },
+  { label: "Joint family", value: "Joint family" },
+  { label: "Lives with grandparents", value: "Lives with grandparents" },
+  { label: "Other", value: "Other" },
+];
 
 const schema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(60),
-  age: z.number().int().min(2).max(14),
+  name: z
+    .string()
+    .trim()
+    .min(1, "Please add your child's name 😊")
+    .max(60)
+    .regex(/^[A-Za-z\s'-]+$/, "Hmm, this should be letters only 😊"),
+  age: z.number().int().min(1).max(18),
 });
-
-const Pill = ({ active, onClick, children }: any) => (
-  <button
-    type="button"
-    onClick={onClick}
-    className={`rounded-full border px-3 py-1.5 text-xs transition-colors ${
-      active
-        ? "border-primary bg-secondary text-primary-deep"
-        : "border-border bg-card text-muted-foreground hover:border-primary/40"
-    }`}
-  >
-    {children}
-  </button>
-);
 
 const Onboarding = () => {
   const nav = useNavigate();
   const { session, loading: authLoading } = useAuth();
   const [name, setName] = useState("");
-  const [age, setAge] = useState<number>(5);
+  const [age, setAge] = useState<string>("");
   const [gender, setGender] = useState<string>("");
   const [family, setFamily] = useState<string>("");
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !session) nav("/auth", { replace: true });
   }, [session, authLoading, nav]);
 
+  const nameState: ValidationState = !touched.name
+    ? "untouched"
+    : name.trim()
+    ? isLettersOnly(name)
+      ? "valid"
+      : "error"
+    : "untouched";
+  const ageState: ValidationState = !touched.age
+    ? "untouched"
+    : age.trim()
+    ? isNumeric(age)
+      ? "valid"
+      : "error"
+    : "untouched";
+
   const submit = async () => {
     if (!session) return;
-    const parsed = schema.safeParse({ name, age });
+    setTouched({ name: true, age: true });
+    const ageNum = Number(age);
+    const parsed = schema.safeParse({ name, age: ageNum });
     if (!parsed.success) {
       toast.error(parsed.error.errors[0].message);
       return;
@@ -54,7 +81,7 @@ const Onboarding = () => {
       .from("child_profiles")
       .insert({
         name: name.trim(),
-        age,
+        age: ageNum,
         gender: gender || null,
         family_type: family || null,
         user_id: session.user.id,
@@ -74,7 +101,7 @@ const Onboarding = () => {
 
   return (
     <PhoneShell>
-      <div className="flex-1 px-6 pb-10 pt-12">
+      <div className="flex-1 overflow-y-auto px-6 pb-10 pt-12">
         <div className="mb-8 text-center">
           <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-3xl bg-secondary text-3xl">
             🎙️
@@ -86,54 +113,46 @@ const Onboarding = () => {
         <h2 className="mb-1 text-xl font-bold text-foreground">About your child</h2>
         <p className="mb-6 text-sm text-muted-foreground">We'll use this to personalise stories.</p>
 
-        <label className="mb-4 block">
-          <span className="mb-2 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <div className="mb-4">
+          <FieldLabel tooltip="Your child's first name — used to personalise the story.">
             Child's name
-          </span>
-          <input
+          </FieldLabel>
+          <TextInput
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
             placeholder="e.g. Aanya"
             maxLength={60}
-            className="w-full rounded-xl border border-border bg-card px-4 py-3 text-sm outline-none focus:border-primary"
+            state={nameState}
+            errorMessage="Hmm, this should be letters only 😊"
           />
-        </label>
-
-        <div className="mb-4">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Age</div>
-          <div className="flex flex-wrap gap-2">
-            {ages.map((a) => (
-              <Pill key={a} active={age === a} onClick={() => setAge(a)}>
-                {a}
-              </Pill>
-            ))}
-          </div>
         </div>
 
         <div className="mb-4">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Gender (optional)
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {genders.map((g) => (
-              <Pill key={g} active={gender === g} onClick={() => setGender(gender === g ? "" : g)}>
-                {g}
-              </Pill>
-            ))}
-          </div>
+          <FieldLabel tooltip="Helps us pitch the language and length just right.">Age</FieldLabel>
+          <TextInput
+            value={age}
+            onChange={(e) => setAge(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, age: true }))}
+            inputMode="numeric"
+            placeholder="e.g. 5"
+            state={ageState}
+            errorMessage="Looks like age should be a number 😊"
+          />
+        </div>
+
+        <div className="mb-4">
+          <FieldLabel optional tooltip="So we use the right pronouns in the story.">
+            Gender
+          </FieldLabel>
+          <Select value={gender} onChange={setGender} options={GENDERS} placeholder="Select gender" />
         </div>
 
         <div className="mb-8">
-          <div className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-            Family setup (optional)
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {families.map((f) => (
-              <Pill key={f} active={family === f} onClick={() => setFamily(family === f ? "" : f)}>
-                {f}
-              </Pill>
-            ))}
-          </div>
+          <FieldLabel optional tooltip="A quick overview of who's around your child.">
+            Family setup
+          </FieldLabel>
+          <Select value={family} onChange={setFamily} options={FAMILY_SETUPS} placeholder="Select family setup" />
         </div>
 
         <button
