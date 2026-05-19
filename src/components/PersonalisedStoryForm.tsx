@@ -1,0 +1,446 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ChevronLeft, Sparkles, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import { PhoneShell } from "@/components/PhoneShell";
+import { FloatingMiniPlayer } from "@/components/FloatingMiniPlayer";
+import {
+  FieldLabel,
+  TextInput,
+  Select,
+  Section,
+  AddressTermsEditor,
+  AddressTerm,
+  parseAddressTerms,
+  serializeAddressTerms,
+  isLettersOnly,
+  isNumeric,
+  ValidationState,
+} from "@/components/StoryFormFields";
+import { createPersonalisedStory } from "@/lib/stories";
+import { supabase } from "@/integrations/supabase/client";
+
+type Props = {
+  storyType: "personalised_audio" | "bedtime_text";
+  pageTitle: string;
+  backTo?: string;
+};
+
+const GENDERS = [
+  { label: "Girl", value: "Girl" },
+  { label: "Boy", value: "Boy" },
+  { label: "Prefer not to say", value: "Prefer not to say" },
+];
+
+const FAMILY_SETUPS = [
+  { label: "Nuclear family", value: "Nuclear family" },
+  { label: "Single parent", value: "Single parent" },
+  { label: "Joint family", value: "Joint family" },
+  { label: "Lives with grandparents", value: "Lives with grandparents" },
+  { label: "Other", value: "Other" },
+];
+
+const PERSONALITIES = [
+  "Curious",
+  "Shy",
+  "Playful",
+  "Confident",
+  "Emotional",
+  "Stubborn",
+  "Kind",
+  "Energetic",
+  "Imaginative",
+  "Other",
+].map((p) => ({ label: p, value: p }));
+
+const HOME_TYPES = [
+  { label: "Apartment", value: "Apartment" },
+  { label: "Independent House", value: "Independent House" },
+  { label: "Gated Society", value: "Gated Society" },
+  { label: "Other", value: "Other" },
+];
+
+type FormState = {
+  name: string;
+  age: string;
+  gender: string;
+  family_type: string;
+  city: string;
+  personality_choice: string; // dropdown pick
+  personality_custom: string;
+  home_type_choice: string;
+  home_type_custom: string;
+  family_members: string;
+  address_terms: AddressTerm[];
+  theme: string;
+  occasion: string;
+};
+
+const emptyForm: FormState = {
+  name: "",
+  age: "",
+  gender: "",
+  family_type: "",
+  city: "",
+  personality_choice: "",
+  personality_custom: "",
+  home_type_choice: "",
+  home_type_custom: "",
+  family_members: "",
+  address_terms: [],
+  theme: "",
+  occasion: "",
+};
+
+const matchToOption = (raw: string, options: { value: string }[]): { choice: string; custom: string } => {
+  const v = (raw ?? "").trim();
+  if (!v) return { choice: "", custom: "" };
+  const found = options.find((o) => o.value.toLowerCase() === v.toLowerCase());
+  if (found) return { choice: found.value, custom: "" };
+  return { choice: "Other", custom: v };
+};
+
+const resolveChoice = (choice: string, custom: string) =>
+  choice === "Other" ? custom.trim() : choice.trim();
+
+export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-hub" }: Props) => {
+  const nav = useNavigate();
+  const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
+
+  const [loading, setLoading] = useState(true);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!profileId) {
+      setLoading(false);
+      return;
+    }
+    supabase
+      .from("child_profiles")
+      .select(
+        "name, age, gender, family_type, city, personality, home_type, family_members, family_address_terms"
+      )
+      .eq("id", profileId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          const personality = matchToOption(data.personality ?? "", PERSONALITIES);
+          const home = matchToOption(data.home_type ?? "", HOME_TYPES);
+          setForm({
+            name: data.name ?? "",
+            age: data.age != null ? String(data.age) : "",
+            gender: data.gender ?? "",
+            family_type: data.family_type ?? "",
+            city: data.city ?? "",
+            personality_choice: personality.choice,
+            personality_custom: personality.custom,
+            home_type_choice: home.choice,
+            home_type_custom: home.custom,
+            family_members: data.family_members ?? "",
+            address_terms: parseAddressTerms(data.family_address_terms ?? ""),
+            theme: "",
+            occasion: "",
+          });
+        }
+        setLoading(false);
+      });
+  }, [profileId]);
+
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+  const markTouched = (k: string) => setTouched((t) => ({ ...t, [k]: true }));
+
+  /* ---- field validation ---- */
+  const nameState: ValidationState = !touched.name
+    ? "untouched"
+    : form.name.trim()
+    ? isLettersOnly(form.name)
+      ? "valid"
+      : "error"
+    : "untouched";
+  const ageState: ValidationState = !touched.age
+    ? "untouched"
+    : form.age.trim()
+    ? isNumeric(form.age)
+      ? "valid"
+      : "error"
+    : "untouched";
+  const themeState: ValidationState = !touched.theme
+    ? "untouched"
+    : form.theme.trim()
+    ? "valid"
+    : "error";
+
+  const childName = useMemo(() => form.name.trim() || "your child", [form.name]);
+
+  const submit = async () => {
+    if (!profileId) {
+      toast.error("Please complete onboarding first.");
+      return;
+    }
+    setTouched((t) => ({ ...t, name: true, age: true, theme: true }));
+    if (!form.name.trim() || !isLettersOnly(form.name)) {
+      toast.error("Please enter a valid name (letters only).");
+      return;
+    }
+    if (form.age.trim() && !isNumeric(form.age)) {
+      toast.error("Looks like age should be a number 😊");
+      return;
+    }
+    if (!form.theme.trim()) {
+      toast.error("Please add a theme for the story.");
+      return;
+    }
+
+    const personality = resolveChoice(form.personality_choice, form.personality_custom);
+    const home_type = resolveChoice(form.home_type_choice, form.home_type_custom);
+    const family_address_terms = serializeAddressTerms(form.address_terms);
+
+    setSubmitting(true);
+    try {
+      const created = await createPersonalisedStory({
+        title: `${form.name.trim() || "Your child"}'s ${form.theme.trim()} Story`,
+        theme: form.theme.trim(),
+        description: null,
+        story_type: storyType,
+        age_group: form.age || null,
+        child_profile_id: profileId,
+        thumbnail: "✨",
+        generation_params: {
+          name: form.name.trim(),
+          age: form.age.trim(),
+          gender: form.gender,
+          family_type: form.family_type,
+          city: form.city.trim(),
+          personality,
+          home_type,
+          family_members: form.family_members.trim(),
+          family_address_terms,
+          theme: form.theme.trim(),
+          occasion: form.occasion.trim() || null,
+        },
+      });
+      toast.success("Story request saved! We'll generate it shortly.");
+      nav(`/generating/${created.id}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Could not save story");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <PhoneShell>
+      <header className="px-5 pt-4 pb-2">
+        <button onClick={() => nav(backTo)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
+          <ChevronLeft className="h-4 w-4" /> Back
+        </button>
+        <h1 className="text-xl font-extrabold text-foreground">{pageTitle}</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Tell us a little about {childName} — only the basics are required. Anything you add helps us
+          make the story feel personal.
+        </p>
+      </header>
+
+      <main className="flex-1 overflow-y-auto px-5 pb-6 space-y-3">
+        {!profileId && (
+          <div className="flex items-start gap-2 rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-3 text-xs text-tag-warm-fg">
+            <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <div>
+              No child profile found.{" "}
+              <Link to="/onboarding" className="font-bold underline">
+                Please complete onboarding first.
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {loading ? (
+          <div className="rounded-2xl border border-border bg-card p-4 text-xs text-muted-foreground">
+            Loading profile…
+          </div>
+        ) : (
+          <>
+            {/* Basic details */}
+            <Section title="Basic details" subtitle="The essentials we need to begin." defaultOpen>
+              <div>
+                <FieldLabel tooltip="Your child's first name — used to personalise the story.">Name</FieldLabel>
+                <TextInput
+                  value={form.name}
+                  onChange={(e) => set("name", e.target.value)}
+                  onBlur={() => markTouched("name")}
+                  placeholder="e.g. Aanya"
+                  state={nameState}
+                  errorMessage="Hmm, this should be letters only 😊"
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="Helps us pitch the language and length just right.">Age</FieldLabel>
+                <TextInput
+                  value={form.age}
+                  onChange={(e) => set("age", e.target.value)}
+                  onBlur={() => markTouched("age")}
+                  inputMode="numeric"
+                  placeholder="e.g. 5"
+                  state={ageState}
+                  errorMessage="Looks like age should be a number 😊"
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="So we use the right pronouns in the story.">Gender</FieldLabel>
+                <Select
+                  value={form.gender}
+                  onChange={(v) => set("gender", v)}
+                  options={GENDERS}
+                  placeholder="Select gender"
+                />
+              </div>
+            </Section>
+
+            {/* Family context */}
+            <Section
+              title="Family context"
+              subtitle="Make the story feel like home."
+              optional
+              defaultOpen={false}
+            >
+              <div>
+                <FieldLabel tooltip="This gives a quick overview. You can add more details about family members below.">
+                  Family setup
+                </FieldLabel>
+                <Select
+                  value={form.family_type}
+                  onChange={(v) => set("family_type", v)}
+                  options={FAMILY_SETUPS}
+                  placeholder="Select family setup"
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="The people who appear around your child every day.">
+                  Family members
+                </FieldLabel>
+                <TextInput
+                  value={form.family_members}
+                  onChange={(e) => set("family_members", e.target.value)}
+                  placeholder="e.g. Father, Mother, Grandparents"
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="Helps us make the story feel more personal and familiar.">
+                  Family address terms
+                </FieldLabel>
+                <p className="-mt-1 mb-2 text-[11px] text-muted-foreground">
+                  e.g. Mother → Mummy, Father → Papa, Dog → Doggo
+                </p>
+                <AddressTermsEditor
+                  value={form.address_terms}
+                  onChange={(next) => set("address_terms", next)}
+                />
+              </div>
+            </Section>
+
+            {/* Environment */}
+            <Section
+              title="Environment"
+              subtitle="Where the world of the story lives."
+              optional
+              defaultOpen={false}
+            >
+              <div>
+                <FieldLabel tooltip="Adds local flavour and familiar places.">City</FieldLabel>
+                <TextInput
+                  value={form.city}
+                  onChange={(e) => set("city", e.target.value)}
+                  placeholder="e.g. Bengaluru"
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="So the setting feels like your child's everyday world." optional>
+                  Home type
+                </FieldLabel>
+                <Select
+                  value={form.home_type_choice}
+                  onChange={(v) => {
+                    set("home_type_choice", v);
+                    if (v !== "Other") set("home_type_custom", "");
+                  }}
+                  options={HOME_TYPES}
+                  placeholder="Select home type"
+                />
+                {form.home_type_choice === "Other" && (
+                  <div className="mt-2">
+                    <TextInput
+                      value={form.home_type_custom}
+                      onChange={(e) => set("home_type_custom", e.target.value)}
+                      placeholder="Tell us more…"
+                    />
+                  </div>
+                )}
+              </div>
+            </Section>
+
+            {/* Personality & Story */}
+            <Section title="Personality & story" subtitle="What makes this story uniquely theirs." defaultOpen>
+              <div>
+                <FieldLabel tooltip="Shapes how the child behaves in the story.">Personality</FieldLabel>
+                <Select
+                  value={form.personality_choice}
+                  onChange={(v) => {
+                    set("personality_choice", v);
+                    if (v !== "Other") set("personality_custom", "");
+                  }}
+                  options={PERSONALITIES}
+                  placeholder="e.g. playful, shy, curious"
+                />
+                {form.personality_choice === "Other" && (
+                  <div className="mt-2">
+                    <TextInput
+                      value={form.personality_custom}
+                      onChange={(e) => set("personality_custom", e.target.value)}
+                      placeholder="Tell us more…"
+                    />
+                  </div>
+                )}
+              </div>
+              <div>
+                <FieldLabel tooltip="What value or lesson should the story teach?">Theme</FieldLabel>
+                <TextInput
+                  value={form.theme}
+                  onChange={(e) => set("theme", e.target.value)}
+                  onBlur={() => markTouched("theme")}
+                  placeholder="e.g. Friendship, Courage, Sharing, Healthy habits"
+                  state={themeState}
+                  errorMessage="A short theme helps us start the story."
+                />
+              </div>
+              <div>
+                <FieldLabel tooltip="Adds context to the story (optional)" optional>
+                  Occasion
+                </FieldLabel>
+                <TextInput
+                  value={form.occasion}
+                  onChange={(e) => set("occasion", e.target.value)}
+                  placeholder="e.g. Birthday, First day of school, Diwali, Making a new friend"
+                />
+              </div>
+            </Section>
+
+            <button
+              onClick={submit}
+              disabled={submitting || !profileId}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-primary py-3.5 text-sm font-extrabold text-primary-foreground shadow-glow transition-opacity disabled:opacity-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              {submitting ? "Creating…" : `Create a story for ${childName} ✨`}
+            </button>
+          </>
+        )}
+      </main>
+      <FloatingMiniPlayer />
+    </PhoneShell>
+  );
+};
+
+export default PersonalisedStoryForm;
