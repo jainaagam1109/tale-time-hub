@@ -37,10 +37,15 @@ const Dashboard = () => {
   const pending = pendingStories[0];
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
+  const lastCompleted = typeof window !== "undefined" && localStorage.getItem("lulutales_last_story_completed") === "1";
+  const lastProgressRaw = typeof window !== "undefined" ? parseInt(localStorage.getItem("lulutales_last_story_progress") ?? "0", 10) : 0;
+  const lastProgress = isFinite(lastProgressRaw) ? Math.max(0, Math.min(100, lastProgressRaw)) : 0;
   const generatedStories = stories.filter(
     (s) => s.is_generated && (s.story_type === "personalised_audio" || s.story_type === "pre_recorded")
   );
-  const ongoing = generatedStories.find((s) => s.id === lastId) ?? generatedStories[0];
+  const ongoingFromLast = lastId && !lastCompleted ? generatedStories.find((s) => s.id === lastId) : undefined;
+  const ongoing = ongoingFromLast ?? generatedStories[0];
+  const ongoingProgress = ongoing && ongoingFromLast ? lastProgress : 0;
 
   const streak = [true, true, true, true, true, false, false];
   const badges = [
@@ -95,9 +100,12 @@ const Dashboard = () => {
                 </button>
               </div>
               <div className="mt-3 h-1.5 rounded-full bg-secondary">
-                <div className="h-full w-1/4 rounded-full bg-gradient-primary" />
+                <div
+                  className="h-full rounded-full bg-gradient-primary transition-all"
+                  style={{ width: `${ongoingProgress}%` }}
+                />
               </div>
-              <div className="mt-1 text-[10px] text-muted-foreground">25% complete</div>
+              <div className="mt-1 text-[10px] text-muted-foreground">{ongoingProgress}% complete</div>
             </div>
           ) : (
             <button
