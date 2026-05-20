@@ -84,7 +84,7 @@ const Onboarding = () => {
         name: name.trim(),
         age: ageNum,
         gender: gender || null,
-        family_type: family || null,
+        family_type: (family === "Other" ? familyOther.trim() : family) || null,
         user_id: session.user.id,
       })
       .select()
