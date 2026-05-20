@@ -315,11 +315,23 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
                   Family setup
                 </FieldLabel>
                 <Select
-                  value={form.family_type}
-                  onChange={(v) => set("family_type", v)}
+                  value={form.family_type_choice}
+                  onChange={(v) => {
+                    set("family_type_choice", v);
+                    if (v !== "Other") set("family_type_custom", "");
+                  }}
                   options={FAMILY_SETUPS}
                   placeholder="Select family setup"
                 />
+                {form.family_type_choice === "Other" && (
+                  <div className="mt-2">
+                    <TextInput
+                      value={form.family_type_custom}
+                      onChange={(e) => set("family_type_custom", e.target.value)}
+                      placeholder="Tell us about your family setup…"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <FieldLabel tooltip="The people who appear around your child every day.">
