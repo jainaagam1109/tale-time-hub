@@ -26,12 +26,18 @@ export const FieldLabel = ({
 
 export const InfoTooltip = ({ text }: { text: string }) => {
   const [show, setShow] = useState(false);
-  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
 
   const open = () => {
     const r = btnRef.current?.getBoundingClientRect();
-    if (r) setPos({ top: r.bottom + 6, left: r.left + r.width / 2 });
+    if (r) {
+      const margin = 8;
+      const width = Math.min(240, window.innerWidth - margin * 2);
+      let left = r.left + r.width / 2 - width / 2;
+      left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+      setPos({ top: r.bottom + 6, left, width });
+    }
     setShow(true);
   };
   const close = () => setShow(false);
@@ -57,8 +63,8 @@ export const InfoTooltip = ({ text }: { text: string }) => {
       {show && pos && (
         <div
           role="tooltip"
-          style={{ top: pos.top, left: pos.left, transform: "translateX(-50%)" }}
-          className="pointer-events-none fixed z-50 w-56 max-w-[80vw] rounded-xl border border-border bg-card p-2.5 text-[11px] normal-case tracking-normal text-foreground shadow-soft"
+          style={{ top: pos.top, left: pos.left, width: pos.width }}
+          className="pointer-events-none fixed z-50 rounded-xl border border-border bg-card p-2.5 text-[11px] normal-case tracking-normal text-foreground shadow-soft"
         >
           {text}
         </div>
