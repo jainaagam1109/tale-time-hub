@@ -153,7 +153,24 @@ const Onboarding = () => {
           <FieldLabel optional tooltip="A quick overview of who's around your child.">
             Family setup
           </FieldLabel>
-          <Select value={family} onChange={setFamily} options={FAMILY_SETUPS} placeholder="Select family setup" />
+          <Select
+            value={family}
+            onChange={(v) => {
+              setFamily(v);
+              if (v !== "Other") setFamilyOther("");
+            }}
+            options={FAMILY_SETUPS}
+            placeholder="Select family setup"
+          />
+          {family === "Other" && (
+            <div className="mt-2">
+              <TextInput
+                value={familyOther}
+                onChange={(e) => setFamilyOther(e.target.value)}
+                placeholder="Tell us about your family setup…"
+              />
+            </div>
+          )}
         </div>
 
         <button
