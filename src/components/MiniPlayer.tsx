@@ -24,6 +24,8 @@ export const MiniPlayer = () => {
   if (!story) return null;
   if (story.story_type === "bedtime_text") return null;
   if (location.pathname.startsWith("/player/")) return null;
+  // Hide on Home — the dashboard already surfaces the ongoing story prominently
+  if (location.pathname === "/") return null;
 
   return (
     <Link
