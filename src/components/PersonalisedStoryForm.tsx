@@ -64,9 +64,10 @@ type FormState = {
   name: string;
   age: string;
   gender: string;
-  family_type: string;
+  family_type_choice: string;
+  family_type_custom: string;
   city: string;
-  personality_choice: string; // dropdown pick
+  personality_choice: string;
   personality_custom: string;
   home_type_choice: string;
   home_type_custom: string;
@@ -80,7 +81,8 @@ const emptyForm: FormState = {
   name: "",
   age: "",
   gender: "",
-  family_type: "",
+  family_type_choice: "",
+  family_type_custom: "",
   city: "",
   personality_choice: "",
   personality_custom: "",
@@ -128,11 +130,13 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
         if (data) {
           const personality = matchToOption(data.personality ?? "", PERSONALITIES);
           const home = matchToOption(data.home_type ?? "", HOME_TYPES);
+          const family = matchToOption(data.family_type ?? "", FAMILY_SETUPS);
           setForm({
             name: data.name ?? "",
             age: data.age != null ? String(data.age) : "",
             gender: data.gender ?? "",
-            family_type: data.family_type ?? "",
+            family_type_choice: family.choice,
+            family_type_custom: family.custom,
             city: data.city ?? "",
             personality_choice: personality.choice,
             personality_custom: personality.custom,
@@ -212,7 +216,7 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
           name: form.name.trim(),
           age: form.age.trim(),
           gender: form.gender,
-          family_type: form.family_type,
+          family_type: resolveChoice(form.family_type_choice, form.family_type_custom),
           city: form.city.trim(),
           personality,
           home_type,
@@ -311,11 +315,23 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
                   Family setup
                 </FieldLabel>
                 <Select
-                  value={form.family_type}
-                  onChange={(v) => set("family_type", v)}
+                  value={form.family_type_choice}
+                  onChange={(v) => {
+                    set("family_type_choice", v);
+                    if (v !== "Other") set("family_type_custom", "");
+                  }}
                   options={FAMILY_SETUPS}
                   placeholder="Select family setup"
                 />
+                {form.family_type_choice === "Other" && (
+                  <div className="mt-2">
+                    <TextInput
+                      value={form.family_type_custom}
+                      onChange={(e) => set("family_type_custom", e.target.value)}
+                      placeholder="Tell us about your family setup…"
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <FieldLabel tooltip="The people who appear around your child every day.">

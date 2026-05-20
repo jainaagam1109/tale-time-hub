@@ -45,6 +45,7 @@ const Onboarding = () => {
   const [age, setAge] = useState<string>("");
   const [gender, setGender] = useState<string>("");
   const [family, setFamily] = useState<string>("");
+  const [familyOther, setFamilyOther] = useState<string>("");
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
@@ -83,7 +84,7 @@ const Onboarding = () => {
         name: name.trim(),
         age: ageNum,
         gender: gender || null,
-        family_type: family || null,
+        family_type: (family === "Other" ? familyOther.trim() : family) || null,
         user_id: session.user.id,
       })
       .select()
@@ -152,7 +153,24 @@ const Onboarding = () => {
           <FieldLabel optional tooltip="A quick overview of who's around your child.">
             Family setup
           </FieldLabel>
-          <Select value={family} onChange={setFamily} options={FAMILY_SETUPS} placeholder="Select family setup" />
+          <Select
+            value={family}
+            onChange={(v) => {
+              setFamily(v);
+              if (v !== "Other") setFamilyOther("");
+            }}
+            options={FAMILY_SETUPS}
+            placeholder="Select family setup"
+          />
+          {family === "Other" && (
+            <div className="mt-2">
+              <TextInput
+                value={familyOther}
+                onChange={(e) => setFamilyOther(e.target.value)}
+                placeholder="Tell us about your family setup…"
+              />
+            </div>
+          )}
         </div>
 
         <button
