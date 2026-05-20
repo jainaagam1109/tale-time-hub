@@ -64,9 +64,10 @@ type FormState = {
   name: string;
   age: string;
   gender: string;
-  family_type: string;
+  family_type_choice: string;
+  family_type_custom: string;
   city: string;
-  personality_choice: string; // dropdown pick
+  personality_choice: string;
   personality_custom: string;
   home_type_choice: string;
   home_type_custom: string;
@@ -80,7 +81,8 @@ const emptyForm: FormState = {
   name: "",
   age: "",
   gender: "",
-  family_type: "",
+  family_type_choice: "",
+  family_type_custom: "",
   city: "",
   personality_choice: "",
   personality_custom: "",
