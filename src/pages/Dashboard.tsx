@@ -100,9 +100,12 @@ const Dashboard = () => {
                 </button>
               </div>
               <div className="mt-3 h-1.5 rounded-full bg-secondary">
-                <div className="h-full w-1/4 rounded-full bg-gradient-primary" />
+                <div
+                  className="h-full rounded-full bg-gradient-primary transition-all"
+                  style={{ width: `${ongoingProgress}%` }}
+                />
               </div>
-              <div className="mt-1 text-[10px] text-muted-foreground">25% complete</div>
+              <div className="mt-1 text-[10px] text-muted-foreground">{ongoingProgress}% complete</div>
             </div>
           ) : (
             <button
