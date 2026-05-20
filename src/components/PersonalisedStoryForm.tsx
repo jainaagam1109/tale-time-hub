@@ -216,7 +216,7 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
           name: form.name.trim(),
           age: form.age.trim(),
           gender: form.gender,
-          family_type: form.family_type,
+          family_type: resolveChoice(form.family_type_choice, form.family_type_custom),
           city: form.city.trim(),
           personality,
           home_type,
