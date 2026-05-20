@@ -26,31 +26,44 @@ export const FieldLabel = ({
 
 export const InfoTooltip = ({ text }: { text: string }) => {
   const [show, setShow] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!show) return;
-    const onDoc = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setShow(false);
-    };
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
-  }, [show]);
+  const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  const open = () => {
+    const r = btnRef.current?.getBoundingClientRect();
+    if (r) setPos({ top: r.bottom + 6, left: r.left + r.width / 2 });
+    setShow(true);
+  };
+  const close = () => setShow(false);
+
   return (
-    <div ref={ref} className="relative inline-block">
+    <>
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setShow((v) => !v)}
+        onMouseEnter={open}
+        onMouseLeave={close}
+        onFocus={open}
+        onBlur={close}
+        onClick={(e) => {
+          e.preventDefault();
+          show ? close() : open();
+        }}
         className="flex items-center text-muted-foreground hover:text-primary-deep"
         aria-label="More info"
       >
         <Info className="h-3.5 w-3.5" />
       </button>
-      {show && (
-        <div className="absolute left-1/2 top-full z-20 mt-1 w-56 -translate-x-1/2 rounded-xl border border-border bg-card p-2.5 text-[11px] normal-case tracking-normal text-foreground shadow-soft">
+      {show && pos && (
+        <div
+          role="tooltip"
+          style={{ top: pos.top, left: pos.left, transform: "translateX(-50%)" }}
+          className="pointer-events-none fixed z-50 w-56 max-w-[80vw] rounded-xl border border-border bg-card p-2.5 text-[11px] normal-case tracking-normal text-foreground shadow-soft"
+        >
           {text}
         </div>
       )}
-    </div>
+    </>
   );
 };
 
