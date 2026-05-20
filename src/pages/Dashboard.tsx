@@ -37,10 +37,15 @@ const Dashboard = () => {
   const pending = pendingStories[0];
 
   const lastId = typeof window !== "undefined" ? localStorage.getItem("lulutales_last_story") : null;
+  const lastCompleted = typeof window !== "undefined" && localStorage.getItem("lulutales_last_story_completed") === "1";
+  const lastProgressRaw = typeof window !== "undefined" ? parseInt(localStorage.getItem("lulutales_last_story_progress") ?? "0", 10) : 0;
+  const lastProgress = isFinite(lastProgressRaw) ? Math.max(0, Math.min(100, lastProgressRaw)) : 0;
   const generatedStories = stories.filter(
     (s) => s.is_generated && (s.story_type === "personalised_audio" || s.story_type === "pre_recorded")
   );
-  const ongoing = generatedStories.find((s) => s.id === lastId) ?? generatedStories[0];
+  const ongoingFromLast = lastId && !lastCompleted ? generatedStories.find((s) => s.id === lastId) : undefined;
+  const ongoing = ongoingFromLast ?? generatedStories[0];
+  const ongoingProgress = ongoing && ongoingFromLast ? lastProgress : 0;
 
   const streak = [true, true, true, true, true, false, false];
   const badges = [
