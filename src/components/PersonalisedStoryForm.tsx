@@ -130,11 +130,13 @@ export const PersonalisedStoryForm = ({ storyType, pageTitle, backTo = "/magic-h
         if (data) {
           const personality = matchToOption(data.personality ?? "", PERSONALITIES);
           const home = matchToOption(data.home_type ?? "", HOME_TYPES);
+          const family = matchToOption(data.family_type ?? "", FAMILY_SETUPS);
           setForm({
             name: data.name ?? "",
             age: data.age != null ? String(data.age) : "",
             gender: data.gender ?? "",
-            family_type: data.family_type ?? "",
+            family_type_choice: family.choice,
+            family_type_custom: family.custom,
             city: data.city ?? "",
             personality_choice: personality.choice,
             personality_custom: personality.custom,
