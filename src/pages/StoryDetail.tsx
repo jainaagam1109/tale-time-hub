@@ -40,7 +40,7 @@ const StoryDetail = () => {
   return (
     <PhoneShell>
       <div className="px-5 pt-4 pb-3">
-        <button onClick={() => nav(-1)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
+        <button onClick={() => nav(backTo)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex h-40 items-center justify-center rounded-3xl bg-gradient-card text-7xl shadow-soft">
