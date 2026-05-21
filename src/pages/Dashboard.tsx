@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Play, Sparkles, BarChart3, ChevronRight, Loader2 } from "lucide-react";
@@ -6,11 +7,24 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 import { fetchStoriesForProfile } from "@/lib/stories";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  recordVisit,
+  getVisits,
+  getCompletions,
+  computeStreak,
+  last7Days,
+  computeBadges,
+} from "@/lib/progress";
 
 const Dashboard = () => {
   const nav = useNavigate();
   const childName = localStorage.getItem("lulutales_child_name") ?? "friend";
   const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
+
+  useEffect(() => {
+    if (profileId) recordVisit(profileId);
+  }, [profileId]);
+
   const { data: stories = [] } = useQuery({
     queryKey: ["stories-for-profile", profileId],
     queryFn: () => (profileId ? fetchStoriesForProfile(profileId) : Promise.resolve([])),
@@ -47,12 +61,21 @@ const Dashboard = () => {
   const ongoing = ongoingFromLast ?? generatedStories[0];
   const ongoingProgress = ongoing && ongoingFromLast ? lastProgress : 0;
 
-  const streak = [true, true, true, true, true, false, false];
-  const badges = [
-    { emoji: "🌟", label: "First story" },
-    { emoji: "🔥", label: "5-day streak" },
-    { emoji: "🤝", label: "Made a friend" },
-  ];
+  const { visits, completions, streak, week, badges } = useMemo(() => {
+    if (!profileId) {
+      return { visits: [], completions: [], streak: 0, week: last7Days([]), badges: [] };
+    }
+    const v = getVisits(profileId);
+    const c = getCompletions(profileId);
+    return {
+      visits: v,
+      completions: c,
+      streak: computeStreak(v),
+      week: last7Days(v),
+      badges: computeBadges(v, c),
+    };
+  }, [profileId, stories.length]);
+
 
   return (
     <PhoneShell>
@@ -117,24 +140,18 @@ const Dashboard = () => {
           )}
         </section>
 
-        <section className="rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-tag-warm-fg">Today's insight</div>
-          <p className="mt-1 text-sm text-tag-warm-fg">
-            Your child is exploring friendship stories. Ask them what they would do if a friend felt left out.
-          </p>
-        </section>
-
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">7-day streak</h2>
-            <span className="text-[11px] font-bold text-primary-deep">5 / 7</span>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {streak > 0 ? `${streak}-day streak` : "7-day streak"}
+            </h2>
           </div>
           <div className="flex items-center justify-between">
-            {streak.map((on, i) => (
+            {week.map((d) => (
               <div
-                key={i}
+                key={d.date}
                 className={`h-7 w-7 rounded-full border ${
-                  on ? "border-primary bg-gradient-primary" : "border-border bg-card"
+                  d.on ? "border-primary bg-gradient-primary" : "border-border bg-card"
                 }`}
               />
             ))}
@@ -145,18 +162,25 @@ const Dashboard = () => {
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Badges earned
           </h2>
-          <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            {badges.map((b) => (
-              <div
-                key={b.label}
-                className="flex flex-shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground shadow-soft"
-              >
-                <span className="text-base">{b.emoji}</span>
-                {b.label}
-              </div>
-            ))}
-          </div>
+          {badges.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Finish a story or build a streak to start earning badges ✨
+            </p>
+          ) : (
+            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
+              {badges.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex flex-shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground shadow-soft"
+                >
+                  <span className="text-base">{b.emoji}</span>
+                  {b.label}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
+
 
         <button
           onClick={() => nav("/magic-hub")}

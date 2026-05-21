@@ -69,6 +69,12 @@ const Player = () => {
         nav(`/player/${id}/${epNum + 1}`);
       } else {
         localStorage.setItem("lulutales_last_story_completed", "1");
+        const pid = localStorage.getItem("lulutales_profile_id");
+        if (pid && story?.id) {
+          import("@/lib/progress").then((m) =>
+            m.recordCompletion(pid, story.id, story.theme ?? null),
+          );
+        }
         setPlaying(false);
       }
     };
@@ -80,7 +86,7 @@ const Player = () => {
       a.removeEventListener("loadedmetadata", onMeta);
       a.removeEventListener("ended", onEnd);
     };
-  }, [audioUrl, hasNext, epNum, id, nav]);
+  }, [audioUrl, hasNext, epNum, id, nav, story]);
 
   const toggle = () => {
     const a = audioRef.current;
