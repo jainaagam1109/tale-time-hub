@@ -10,6 +10,9 @@ const SIZES = [16, 18, 20];
 const BedtimeReader = () => {
   const { id = "" } = useParams();
   const nav = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from === "/happy-place" ? "/happy-place" : "/";
   const { data: story } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
 
   const [sizeIdx, setSizeIdx] = useState(1);
