@@ -86,7 +86,7 @@ const Player = () => {
       a.removeEventListener("loadedmetadata", onMeta);
       a.removeEventListener("ended", onEnd);
     };
-  }, [audioUrl, hasNext, epNum, id, nav]);
+  }, [audioUrl, hasNext, epNum, id, nav, story]);
 
   const toggle = () => {
     const a = audioRef.current;
