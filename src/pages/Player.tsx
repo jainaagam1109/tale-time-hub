@@ -66,7 +66,7 @@ const Player = () => {
     const onEnd = () => {
       if (hasNext) {
         shouldAutoplayRef.current = true;
-        nav(`/player/${id}/${epNum + 1}`);
+        nav(`/player/${id}/${epNum + 1}`, { replace: true });
       } else {
         localStorage.setItem("lulutales_last_story_completed", "1");
         const pid = localStorage.getItem("lulutales_profile_id");
@@ -110,8 +110,8 @@ const Player = () => {
     a.currentTime = Math.max(0, Math.min((a.duration || 0), a.currentTime + delta));
   };
 
-  const goPrev = () => hasPrev && nav(`/player/${id}/${epNum - 1}`);
-  const goNext = () => hasNext && nav(`/player/${id}/${epNum + 1}`);
+  const goPrev = () => hasPrev && nav(`/player/${id}/${epNum - 1}`, { replace: true });
+  const goNext = () => hasNext && nav(`/player/${id}/${epNum + 1}`, { replace: true });
 
   const pct = dur > 0 ? (t / dur) * 100 : 0;
 
@@ -120,7 +120,7 @@ const Player = () => {
     return (
       <PhoneShell>
         <div className="flex-1 px-6 pt-6 pb-10">
-          <button onClick={() => nav(-1)} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
+          <button onClick={() => nav(id ? `/story/${id}` : "/")} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
           <div className="mt-20 text-center">
@@ -138,7 +138,7 @@ const Player = () => {
   return (
     <PhoneShell>
       <div className="flex-1 px-6 pt-6 pb-10">
-        <button onClick={() => nav(-1)} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
+        <button onClick={() => nav(id ? `/story/${id}` : "/")} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
 
