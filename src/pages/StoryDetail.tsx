@@ -10,7 +10,10 @@ import { toast } from "sonner";
 const StoryDetail = () => {
   const { id = "" } = useParams();
   const nav = useNavigate();
-  const { data: story, isLoading } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from === "/happy-place" ? "/happy-place" : "/";
+
   const { data: tags = [] } = useQuery({ queryKey: ["story-tags", id], queryFn: () => fetchStoryTags(id), enabled: !!id });
   const { data: episodes = [] } = useQuery({ queryKey: ["episodes", id], queryFn: () => fetchEpisodes(id), enabled: !!id });
   const [saved, setSaved] = useState(false);
