@@ -140,24 +140,18 @@ const Dashboard = () => {
           )}
         </section>
 
-        <section className="rounded-2xl border border-tag-warm-border bg-tag-warm-bg p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-tag-warm-fg">Today's insight</div>
-          <p className="mt-1 text-sm text-tag-warm-fg">
-            Your child is exploring friendship stories. Ask them what they would do if a friend felt left out.
-          </p>
-        </section>
-
         <section>
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">7-day streak</h2>
-            <span className="text-[11px] font-bold text-primary-deep">5 / 7</span>
+            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {streak > 0 ? `${streak}-day streak` : "7-day streak"}
+            </h2>
           </div>
           <div className="flex items-center justify-between">
-            {streak.map((on, i) => (
+            {week.map((d) => (
               <div
-                key={i}
+                key={d.date}
                 className={`h-7 w-7 rounded-full border ${
-                  on ? "border-primary bg-gradient-primary" : "border-border bg-card"
+                  d.on ? "border-primary bg-gradient-primary" : "border-border bg-card"
                 }`}
               />
             ))}
@@ -168,18 +162,25 @@ const Dashboard = () => {
           <h2 className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             Badges earned
           </h2>
-          <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            {badges.map((b) => (
-              <div
-                key={b.label}
-                className="flex flex-shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground shadow-soft"
-              >
-                <span className="text-base">{b.emoji}</span>
-                {b.label}
-              </div>
-            ))}
-          </div>
+          {badges.length === 0 ? (
+            <p className="text-xs text-muted-foreground">
+              Finish a story or build a streak to start earning badges ✨
+            </p>
+          ) : (
+            <div className="-mx-5 flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
+              {badges.map((b) => (
+                <div
+                  key={b.id}
+                  className="flex flex-shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs font-bold text-foreground shadow-soft"
+                >
+                  <span className="text-base">{b.emoji}</span>
+                  {b.label}
+                </div>
+              ))}
+            </div>
+          )}
         </section>
+
 
         <button
           onClick={() => nav("/magic-hub")}
