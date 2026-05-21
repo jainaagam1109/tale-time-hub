@@ -1,9 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { Story } from "@/lib/stories";
 import { TagChip } from "./TagChip";
 
 export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?: "grid" | "row" }) => {
   const to = story.story_type === "bedtime_text" ? `/bedtime/${story.id}` : `/story/${story.id}`;
+  const location = useLocation();
+  const state = { from: location.pathname };
+
 
   if (variant === "row") {
     return (
