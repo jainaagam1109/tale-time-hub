@@ -120,7 +120,7 @@ const Player = () => {
     return (
       <PhoneShell>
         <div className="flex-1 px-6 pt-6 pb-10">
-          <button onClick={() => nav(-1)} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
+          <button onClick={() => nav(id ? `/story/${id}` : "/")} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
             <ChevronLeft className="h-4 w-4" /> Back
           </button>
           <div className="mt-20 text-center">
@@ -138,7 +138,7 @@ const Player = () => {
   return (
     <PhoneShell>
       <div className="flex-1 px-6 pt-6 pb-10">
-        <button onClick={() => nav(-1)} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
+        <button onClick={() => nav(id ? `/story/${id}` : "/")} className="mb-6 flex items-center gap-1 text-xs text-primary-deep">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
 
