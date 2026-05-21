@@ -32,6 +32,7 @@ export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?:
   return (
     <Link
       to={to}
+      state={state}
       className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-colors hover:border-primary/40"
     >
       <div className="flex h-20 items-center justify-center bg-gradient-card text-4xl">
