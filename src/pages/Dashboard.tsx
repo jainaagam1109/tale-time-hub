@@ -1,3 +1,4 @@
+import { useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Play, Sparkles, BarChart3, ChevronRight, Loader2 } from "lucide-react";
@@ -6,11 +7,24 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProfileAvatarButton } from "@/components/ProfileAvatarButton";
 import { fetchStoriesForProfile } from "@/lib/stories";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  recordVisit,
+  getVisits,
+  getCompletions,
+  computeStreak,
+  last7Days,
+  computeBadges,
+} from "@/lib/progress";
 
 const Dashboard = () => {
   const nav = useNavigate();
   const childName = localStorage.getItem("lulutales_child_name") ?? "friend";
   const profileId = typeof window !== "undefined" ? localStorage.getItem("lulutales_profile_id") : null;
+
+  useEffect(() => {
+    if (profileId) recordVisit(profileId);
+  }, [profileId]);
+
   const { data: stories = [] } = useQuery({
     queryKey: ["stories-for-profile", profileId],
     queryFn: () => (profileId ? fetchStoriesForProfile(profileId) : Promise.resolve([])),
@@ -47,12 +61,21 @@ const Dashboard = () => {
   const ongoing = ongoingFromLast ?? generatedStories[0];
   const ongoingProgress = ongoing && ongoingFromLast ? lastProgress : 0;
 
-  const streak = [true, true, true, true, true, false, false];
-  const badges = [
-    { emoji: "🌟", label: "First story" },
-    { emoji: "🔥", label: "5-day streak" },
-    { emoji: "🤝", label: "Made a friend" },
-  ];
+  const { visits, completions, streak, week, badges } = useMemo(() => {
+    if (!profileId) {
+      return { visits: [], completions: [], streak: 0, week: last7Days([]), badges: [] };
+    }
+    const v = getVisits(profileId);
+    const c = getCompletions(profileId);
+    return {
+      visits: v,
+      completions: c,
+      streak: computeStreak(v),
+      week: last7Days(v),
+      badges: computeBadges(v, c),
+    };
+  }, [profileId, stories.length]);
+
 
   return (
     <PhoneShell>
