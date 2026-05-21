@@ -1,61 +1,23 @@
 ## Problem
 
-In `src/pages/Player.tsx`, the progress bar is purely presentational:
+The Player's Back button calls `nav(-1)`, which walks one entry back in browser history. Two things pollute that history so Back feels broken:
 
-```tsx
-<div className="relative h-1.5 rounded-full bg-secondary">
-  <div className="h-full rounded-full bg-gradient-primary" style={{ width: `${pct}%` }} />
-</div>
-```
+1. **Auto-advance between episodes** pushes a new history entry every time an episode ends (`nav(/player/:id/:epNum+1)` in `onEnd`). After listening through episodes 1→2→3, Back goes to episode 2, then 1, instead of leaving the player.
+2. **Manual prev/next episode** buttons (`goPrev`/`goNext`) do the same — each tap pushes a new entry.
+3. Coming from **`/generating/:storyId`**, Back can land the user back on the generating screen (which then bounces them forward again).
 
-No click/drag handler, no `<input type="range">`, no ref — so taps do nothing. The image's red "scrubber dot" is also illusory; there is no thumb element rendered. Only the ±10s buttons can change `currentTime`.
+## Fix
 
-## Fix (single file: `src/pages/Player.tsx`)
+In `src/pages/Player.tsx`:
 
-Replace the static bar with a native `<input type="range">` styled as the progress track. This gives us click-to-seek, drag-to-scrub, and keyboard accessibility for free, and works reliably on mobile (touch) without custom gesture code.
+- Replace `nav(-1)` on the Back button with an explicit destination: go to `/story/${id}` if we have a story id, otherwise `/`. This guarantees Back always exits the player to the story detail page, regardless of how the user got there or how many episodes auto-advanced.
+- Use `{ replace: true }` for the three in-player episode navigations so the history stack doesn't grow per episode:
+  - `onEnd` auto-advance
+  - `goPrev`
+  - `goNext`
 
-Approach:
+No other behavior changes; autoplay, seek, and progress tracking stay the same.
 
-1. Add a seek handler:
-   ```ts
-   const onSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
-     const a = audioRef.current;
-     if (!a || !isFinite(a.duration)) return;
-     const next = Number(e.target.value);
-     a.currentTime = next;
-     setT(next);
-   };
-   ```
-2. Render:
-   ```tsx
-   <input
-     type="range"
-     min={0}
-     max={dur || 0}
-     step={0.1}
-     value={t}
-     onChange={onSeek}
-     disabled={!audioUrl || !dur}
-     className="w-full ..."  // styled track + thumb using design tokens
-     style={{ background: `linear-gradient(to right, hsl(var(--primary)) ${pct}%, hsl(var(--secondary)) ${pct}%)` }}
-   />
-   ```
-   Keep the `0:06 / 1:48` time row underneath unchanged.
+## Files touched
 
-3. Style the range with Tailwind + a small `@layer` rule in `src/index.css` for `::-webkit-slider-thumb` / `::-moz-range-thumb` (a circular thumb using `--primary`) so it visually matches the mockup. Track height stays `h-1.5`.
-
-### Why a native range instead of custom mouse handlers
-
-- Touch support on mobile (the player is in a 390px phone shell) without writing pointer/touch logic.
-- Free keyboard a11y (arrow keys).
-- Less code, no `getBoundingClientRect` math, no edge cases when `duration` is `NaN`.
-
-### Guards
-
-- Disable the input until metadata loads (`!dur`) so users can't seek a 0-length track.
-- Clamp via `min`/`max`; the existing `onTime` listener will continue to update `t` during playback.
-
-## Out of scope
-
-- No changes to skip buttons, episode autoplay, or persistence logic.
-- No changes to BedtimeReader or MiniPlayer.
+- `src/pages/Player.tsx` — Back button target + `replace: true` on episode navigations.

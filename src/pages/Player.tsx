@@ -66,7 +66,7 @@ const Player = () => {
     const onEnd = () => {
       if (hasNext) {
         shouldAutoplayRef.current = true;
-        nav(`/player/${id}/${epNum + 1}`);
+        nav(`/player/${id}/${epNum + 1}`, { replace: true });
       } else {
         localStorage.setItem("lulutales_last_story_completed", "1");
         const pid = localStorage.getItem("lulutales_profile_id");
