@@ -110,8 +110,8 @@ const Player = () => {
     a.currentTime = Math.max(0, Math.min((a.duration || 0), a.currentTime + delta));
   };
 
-  const goPrev = () => hasPrev && nav(`/player/${id}/${epNum - 1}`);
-  const goNext = () => hasNext && nav(`/player/${id}/${epNum + 1}`);
+  const goPrev = () => hasPrev && nav(`/player/${id}/${epNum - 1}`, { replace: true });
+  const goNext = () => hasNext && nav(`/player/${id}/${epNum + 1}`, { replace: true });
 
   const pct = dur > 0 ? (t / dur) * 100 : 0;
 
