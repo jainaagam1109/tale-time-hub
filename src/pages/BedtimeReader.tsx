@@ -32,7 +32,7 @@ const BedtimeReader = () => {
         style={{ borderBottom: `1px solid ${border}` }}
       >
         <button
-          onClick={() => nav(-1)}
+          onClick={() => nav(backTo)}
           className="flex h-9 w-9 items-center justify-center rounded-full"
           style={{ color: fg }}
           aria-label="Back"
