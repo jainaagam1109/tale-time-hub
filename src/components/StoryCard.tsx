@@ -1,14 +1,18 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import type { Story } from "@/lib/stories";
 import { TagChip } from "./TagChip";
 
 export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?: "grid" | "row" }) => {
   const to = story.story_type === "bedtime_text" ? `/bedtime/${story.id}` : `/story/${story.id}`;
+  const location = useLocation();
+  const state = { from: location.pathname };
+
 
   if (variant === "row") {
     return (
       <Link
         to={to}
+        state={state}
         className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3 shadow-soft transition-colors hover:border-primary/40"
       >
         <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-card text-3xl">
@@ -28,6 +32,7 @@ export const StoryCard = ({ story, variant = "grid" }: { story: Story; variant?:
   return (
     <Link
       to={to}
+      state={state}
       className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-soft transition-colors hover:border-primary/40"
     >
       <div className="flex h-20 items-center justify-center bg-gradient-card text-4xl">

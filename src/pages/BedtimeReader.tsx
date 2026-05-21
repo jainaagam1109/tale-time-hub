@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Sun, Moon } from "lucide-react";
 import { fetchStory } from "@/lib/stories";
@@ -10,6 +10,9 @@ const SIZES = [16, 18, 20];
 const BedtimeReader = () => {
   const { id = "" } = useParams();
   const nav = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from === "/happy-place" ? "/happy-place" : "/";
   const { data: story } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
 
   const [sizeIdx, setSizeIdx] = useState(1);
@@ -29,7 +32,7 @@ const BedtimeReader = () => {
         style={{ borderBottom: `1px solid ${border}` }}
       >
         <button
-          onClick={() => nav(-1)}
+          onClick={() => nav(backTo)}
           className="flex h-9 w-9 items-center justify-center rounded-full"
           style={{ color: fg }}
           aria-label="Back"

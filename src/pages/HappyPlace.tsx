@@ -25,6 +25,7 @@ const StoryRowCard = ({
 }) => (
   <Link
     to={to}
+    state={{ from: "/happy-place" }}
     className="flex w-44 flex-shrink-0 flex-col gap-2 rounded-2xl border border-border bg-card p-3 shadow-soft transition-colors hover:border-primary/40"
   >
     <div className="flex h-20 items-center justify-center rounded-xl bg-gradient-card text-4xl">

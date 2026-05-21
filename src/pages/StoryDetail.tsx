@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft, Play, Bookmark, BookmarkCheck, Mic, BookOpen } from "lucide-react";
 import { fetchEpisodes, fetchStory, fetchStoryTags, isSaved, toggleSaved } from "@/lib/stories";
@@ -10,7 +10,12 @@ import { toast } from "sonner";
 const StoryDetail = () => {
   const { id = "" } = useParams();
   const nav = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from;
+  const backTo = from === "/happy-place" ? "/happy-place" : "/";
   const { data: story, isLoading } = useQuery({ queryKey: ["story", id], queryFn: () => fetchStory(id) });
+
+
   const { data: tags = [] } = useQuery({ queryKey: ["story-tags", id], queryFn: () => fetchStoryTags(id), enabled: !!id });
   const { data: episodes = [] } = useQuery({ queryKey: ["episodes", id], queryFn: () => fetchEpisodes(id), enabled: !!id });
   const [saved, setSaved] = useState(false);
@@ -35,7 +40,7 @@ const StoryDetail = () => {
   return (
     <PhoneShell>
       <div className="px-5 pt-4 pb-3">
-        <button onClick={() => nav(-1)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
+        <button onClick={() => nav(backTo)} className="mb-3 flex items-center gap-1 text-xs text-primary-deep">
           <ChevronLeft className="h-4 w-4" /> Back
         </button>
         <div className="flex h-40 items-center justify-center rounded-3xl bg-gradient-card text-7xl shadow-soft">

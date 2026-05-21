@@ -1,23 +1,43 @@
-## Problem
+## Goal
 
-The Player's Back button calls `nav(-1)`, which walks one entry back in browser history. Two things pollute that history so Back feels broken:
+Back buttons should follow the app's journey, not browser history:
 
-1. **Auto-advance between episodes** pushes a new history entry every time an episode ends (`nav(/player/:id/:epNum+1)` in `onEnd`). After listening through episodes 1→2→3, Back goes to episode 2, then 1, instead of leaving the player.
-2. **Manual prev/next episode** buttons (`goPrev`/`goNext`) do the same — each tap pushes a new entry.
-3. Coming from **`/generating/:storyId`**, Back can land the user back on the generating screen (which then bounces them forward again).
+- **Player / episode page** → Back goes to the story detail page (`/story/:id`).
+- **Story detail page** → Back goes to the previous list page (Home `/` or Happy Place `/happy-place`), defaulting to Home.
+- **Bedtime reader** (same role as Player for text stories) → Back goes to the story detail page.
 
-## Fix
+## Changes
 
-In `src/pages/Player.tsx`:
+### 1. `src/pages/Player.tsx`
+Already updated previously: Back uses `nav(id ? "/story/${id}" : "/")`. Leave as is. ✅
 
-- Replace `nav(-1)` on the Back button with an explicit destination: go to `/story/${id}` if we have a story id, otherwise `/`. This guarantees Back always exits the player to the story detail page, regardless of how the user got there or how many episodes auto-advanced.
-- Use `{ replace: true }` for the three in-player episode navigations so the history stack doesn't grow per episode:
-  - `onEnd` auto-advance
-  - `goPrev`
-  - `goNext`
+### 2. `src/pages/StoryDetail.tsx`
+Currently `nav(-1)`. Replace with explicit destination:
 
-No other behavior changes; autoplay, seek, and progress tracking stay the same.
+- Read an `origin` hint to decide between `/` and `/happy-place`.
+- Source the hint from `location.state?.from` (set when navigating into the story) and fall back to `document.referrer` path; default to `/`.
+- Use `nav(origin)` (no `replace`) so the destination page is fresh.
+
+### 3. Pass `from` when navigating to a story
+Update the links/handlers that open `/story/:id` so they pass `{ state: { from: <current path> } }`:
+
+- `src/pages/Home.tsx` — story cards / continue-listening card.
+- `src/pages/HappyPlace.tsx` — `StoryRowCard` link (`Link to={...}` becomes `<Link to={to} state={{ from: "/happy-place" }}>`).
+- `src/components/MiniPlayer.tsx` and `src/components/FloatingMiniPlayer.tsx` — if they link to the story page, pass `from: location.pathname`.
+- Any other place that links into `/story/:id` (search via `rg "/story/"`).
+
+If no `from` is provided (e.g. deep link), Story Detail defaults to `/`.
+
+### 4. `src/pages/BedtimeReader.tsx`
+Match Player behavior: Back goes to `/story/${id}` (or `/` if no id). I'll verify the current implementation and update only its Back button.
+
+## Out of scope
+
+- Episode-to-episode prev/next navigation (already uses `replace: true`).
+- Other pages' back buttons (Profile, Insights, Magic Hub forms, etc.) — not mentioned by the user.
 
 ## Files touched
 
-- `src/pages/Player.tsx` — Back button target + `replace: true` on episode navigations.
+- `src/pages/StoryDetail.tsx` — explicit Back target using `location.state.from`.
+- `src/pages/BedtimeReader.tsx` — Back → `/story/:id`.
+- `src/pages/Home.tsx`, `src/pages/HappyPlace.tsx`, `src/components/MiniPlayer.tsx`, `src/components/FloatingMiniPlayer.tsx` — pass `state={{ from: location.pathname }}` when linking to a story.
